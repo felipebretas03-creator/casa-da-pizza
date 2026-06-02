@@ -479,8 +479,8 @@
         const hora = agora.getHours();
         const minutos = agora.getMinutes();
         
-        // A loja abre das 12:50 as 13:00.
-        let isFechadaExpediente = (hora < 12 || (hora === 12 && minutos < 50) || hora >= 13);
+        // A loja abre das 18:00 as 23:00.
+        let isFechadaExpediente = (hora < 18 || hora >= 23);
         
         // Verificar status manual via Google Sheets
         let forceStatus = null;
@@ -573,7 +573,7 @@
 
             // Mensagem descritiva
             const message = document.createElement("p");
-            message.innerHTML = "No momento nossa loja está fechada.<br><br>Nosso horário de funcionamento é das <strong>12:50 às 13:00</strong>.<br><br>Voltaremos a atender às <strong>12:50</strong>!";
+            message.innerHTML = "No momento nossa loja está fechada.<br><br>Nosso horário de funcionamento é das <strong>18:00 às 23:00</strong>.<br><br>Voltaremos a atender às <strong>18:00</strong>!";
             message.style.margin = "0 0 25px 0";
             message.style.color = "#555555";
             message.style.fontSize = "14px";
@@ -582,7 +582,7 @@
 
             // Badge / Alerta de horário
             const badge = document.createElement("div");
-            badge.innerHTML = "⏰ <strong>Abre hoje às 12:50</strong>";
+            badge.innerHTML = "⏰ <strong>Abre hoje às 18:00</strong>";
             badge.style.background = "#fff5f5";
             badge.style.color = "#d62828";
             badge.style.padding = "10px 18px";
