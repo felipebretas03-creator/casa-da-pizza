@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casa da Pizza</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#d32f2f">
+
+  <!-- Suporte para iOS (iPhone/iPad) -->
+  <link rel="apple-touch-icon" href="favicon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Casa da Pizza">
+</head>
+
+<body>
+
+  <div id="locationBox" class="location">📍 Adicionar endereço</div>
+
+  <div class="hero">
+    <img src="hero.jpg.png">
+  </div>
+
+  <div id="cardapio-container">
+    <div style="text-align: center; padding: 40px; color: #777;">
+      Carregando cardápio... ⏳
+    </div>
+  </div>
+
+  <footer style="text-align: center; padding: 30px 10px 90px 10px; font-size: 12px; color: #888; background: #fafafa; border-top: 1px solid #eee;">
+    © 2026 Casa da Pizza | Desenvolvido por <a href="https://www.instagram.com/thepixeloo/" target="_blank" style="color: #d32f2f; text-decoration: none; font-weight: bold;">@thepixeloo</a>
+  </footer>
+
+  <div class="bottom-menu">
+
+    <div class="menu-item">
+      <span>🏠</span>
+      <p>Home</p>
+    </div>
+
+    <!-- 🛒 NOVO -->
+    <div class="menu-item cart" onclick="abrirCarrinho()">
+      <span id="cartIcon">🛒</span>
+      <p>Carrinho</p>
+      <div id="cart-count">0</div>
+    </div>
+
+    <div class="menu-item" onclick="abrirPerfil()">
+      <span>👤</span>
+      <p>Perfil</p>
+    </div>
+
+  </div>
+
+  <!-- MODAL -->
+  <div id="modalEndereco" class="modal">
+    <div class="modal-content">
+
+      <h3>📍 Seus endereços</h3>
+      <div id="listaEnderecos"></div>
+
+      <div class="opcao" onclick="mostrarInput()">➕ Digitar endereço</div>
+
+      <div class="endereco-form">
+
+        <input id="rua" placeholder="Rua" />
+        <input id="numero" placeholder="Número" />
+
+        <input id="bairro" placeholder="Bairro" />
+
+        <input id="cidade" placeholder="Cidade" />
+        <input id="estado" placeholder="Estado (UF)" />
+        <input id="cep" placeholder="CEP" />
+
+        <select id="tipoEndereco">
+          <option>Casa</option>
+          <option>Trabalho</option>
+        </select>
+
+        <button class="confirmar" onclick="salvarNovoEndereco()">Salvar</button>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="popupProduto" class="popup">
+    <div class="popup-content">
+
+      <button class="fechar-popup" onclick="fecharPopup()">✕</button>
+
+      <h3 id="nomeProduto">Produto</h3>
+
+      <!-- SABORES -->
+      <div id="boxSabores" style="display: none; margin-top: 15px;">
+        <label id="labelSabores">Escolha os sabores (pode selecionar mais de um):</label>
+        <div class="opcoes-preparo" id="containerSabores">
+          <!-- Renderizado dinamicamente -->
+        </div>
+      </div>
+      <!-- SEÇÃO DE PREPARO / TAMANHO -->
+      <div id="boxPreparo" style="display: none; margin-top: 15px;">
+        <label>Opção:</label>
+        <div class="opcoes-preparo">
+          <!-- RENDERIZADO DINAMICAMENTE -->
+        </div>
+      </div>
+
+      <!-- OBSERVAÇÃO -->
+      <label>Observações:</label>
+      <textarea id="observacao" placeholder="Ex: sem cebola, borda recheada..."></textarea>
+
+      <!-- BOTÃO -->
+      <button class="confirmar" onclick="confirmarProduto(this)">
+        Adicionar ao carrinho
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Toast moderno -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Modal Premium -->
+  <div id="cartModal" class="modal">
+    <div class="modal-content">
+      <h3>🛒 Adicionado ao carrinho!</h3>
+      <p id="modalMessage"></p>
+      <button onclick="closeModal()">Continuar comprando</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="config.js?v=2"></script>
+  <script>
+
+    const locationBox = document.getElementById("locationBox");
+
+    /* ABRIR MODAL */
+    locationBox.onclick = () =>
+      modalEndereco.style.display = "flex";
+
+    function renderizarEnderecos() {
+      listaEnderecos.innerHTML = "";
+
+      getEnderecos().forEach((e, i) => {
+        listaEnderecos.innerHTML += `
+      <div class="endereco-item">
+
+        <div onclick="selecionarEndereco(${i})" class="endereco-info">
+          <strong>${e.tipo}</strong><br>
+          ${e.endereco}
+        </div>    
+      </div>
+    `;
+      });
+    }
+
+    function renderizarEnderecos() {
+      listaEnderecos.innerHTML = "";
+
+      getEnderecos().forEach((e, i) => {
+        listaEnderecos.innerHTML += `
+      <div class="endereco-item">
+
+        <div onclick="selecionarEndereco(${i})" class="endereco-info">
+          <strong>${e.tipo}</strong><br>
+          ${e.endereco}
+        </div>
+
+        <button class="btn-excluir"
+  onclick="excluirEndereco(${i}); return false;">
+          🗑
+        </button>
+
+      </div>
+    `;
+      });
+    }
+
+    /* SALVAR */
+    function salvarNovoEndereco() {
+
+      const rua = document.getElementById("rua").value;
+      const numero = document.getElementById("numero").value;
+      const bairro = document.getElementById("bairro").value;
+      const cidade = document.getElementById("cidade").value.trim();
+
+      // Lógica do frete automático por escrito (Bairro OU Cidade)
+      let frete = 10; // ← Frete Padrão (se não achar)
+      const local = (bairro + " " + cidade).toLowerCase();
+
+      if (local.includes("nilopolis") || local.includes("nilópolis")) {
+        frete = 5.00;
+      } else if (local.includes("chatuba")) {
+        frete = 4.00;
+      } else if (local.includes("mesquita")) {
+        frete = 5.00;
+      }
+
+      const estado = document.getElementById("estado").value;
+      const cep = document.getElementById("cep").value;
+      const tipo = document.getElementById("tipoEndereco").value;
+
+      if (!rua || !numero || !bairro || !cidade) {
+        alert("Preencha os campos obrigatórios!");
+        return;
+      }
+
+      const enderecoCompleto = `${rua}, ${numero} - ${bairro}, ${cidade} - ${estado}, CEP: ${cep}`;
+
+      let lista = JSON.parse(localStorage.getItem("enderecos")) || [];
+
+      lista.push({
+        tipo: tipo,
+        endereco: enderecoCompleto,
+        frete: frete
+      });
+
+      // 🔥 CORREÇÃO AQUI
+      localStorage.setItem("enderecos", JSON.stringify(lista));
+
+      salvarEndereco(enderecoCompleto);
+      localStorage.setItem("freteUsuario", frete);
+
+      renderizarEnderecos();
+
+      document.getElementById("modalEndereco").style.display = "none";
+
+      alert("Endereço salvo!");
+    }
+
+    /* LISTA */
+    function getEnderecos() {
+      return JSON.parse(localStorage.getItem("enderecos")) || [];
+    }
+
+    function renderizarEnderecos() {
+      const lista = getEnderecos();
+      const container = document.getElementById("listaEnderecos");
+
+      container.innerHTML = "";
+
+      lista.forEach((e, i) => {
+        container.innerHTML += `
+      <div class="endereco-item">
+
+        <div class="endereco-info" onclick="selecionarEndereco(${i})">
+          <strong>${e.tipo}</strong><br>
+          ${e.endereco}
+        </div>
+
+        <button class="btn-excluir" onclick="event.stopPropagation(); excluirEndereco(${i})">
+  🗑
+</button>
+
+      </div>
+    `;
+      });
+    }
+
+    function selecionarEndereco(i) {
+      const lista = getEnderecos();
+      const endereco = lista[i].endereco;
+      const frete = lista[i].frete || 10;
+
+      salvarEndereco(endereco);
+      localStorage.setItem("freteUsuario", frete);
+
+      // 🔥 FECHA O MODAL
+      document.getElementById("modalEndereco").style.display = "none";
+    }
+
+    /* INPUT */
+    function mostrarInput() {
+      inputEndereco.style.display = "block";
+      tipoEndereco.style.display = "block";
+    }
+
+    function salvarEndereco(e) {
+      localStorage.setItem("enderecoUsuario", e);
+
+      const locationBox = document.getElementById("locationBox");
+      if (locationBox) {
+        locationBox.innerHTML = "📍 " + e;
+      }
+    }
+
+    /* WHATS */
+    function pedir() {
+      let e = localStorage.getItem("endereco") || "";
+      window.location.href = "https://wa.me/" + CONFIG.WHATSAPP_NUMERO + "?text=" + encodeURIComponent("Pedido\nEndereço: " + e);
+    }
+
+    function adicionarCarrinho(produto) {
+      let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+
+      carrinho.push(produto);
+
+      localStorage.setItem("carrinho", JSON.stringify(carrinho));
+
+      mostrarToast("🛒 Produto adicionado ao carrinho!");
+    }
+
+    let produtoAtual = "";
+    let precoAtual = 0;
+    let imgAtual = "";
+
+    function mostrarAlertaLojaFechada(msg) {
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.top = "0";
+      overlay.style.left = "0";
+      overlay.style.width = "100vw";
+      overlay.style.height = "100vh";
+      overlay.style.backgroundColor = "rgba(0,0,0,0.6)";
+      overlay.style.backdropFilter = "blur(5px)";
+      overlay.style.zIndex = "25000";
+      overlay.style.display = "flex";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+      overlay.style.opacity = "0";
+      overlay.style.transition = "opacity 0.3s ease";
+
+      const popup = document.createElement("div");
+      popup.style.background = "#fff";
+      popup.style.borderRadius = "24px";
+      popup.style.padding = "30px 20px";
+      popup.style.width = "90%";
+      popup.style.maxWidth = "320px";
+      popup.style.textAlign = "center";
+      popup.style.boxShadow = "0 15px 35px rgba(0,0,0,0.2)";
+      popup.style.transform = "scale(0.8)";
+      popup.style.transition = "transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+
+      popup.innerHTML = `
+        <div style="font-size: 45px; margin-bottom: 10px;">🔒</div>
+        <h3 style="margin: 0 0 10px; color: #222; font-family: 'Poppins', sans-serif; font-size: 22px;">Loja Fechada</h3>
+        <p style="margin: 0 0 20px; color: #555; font-size: 14px; font-family: 'Poppins', sans-serif; line-height: 1.5;">${msg}</p>
+        <button style="width: 100%; padding: 14px; background: #222; color: #fff; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 15px;">Entendi</button>
+      `;
+
+      popup.querySelector("button").onclick = () => {
+        overlay.style.opacity = "0";
+        popup.style.transform = "scale(0.8)";
+        setTimeout(() => overlay.remove(), 300);
+      };
+
+      overlay.appendChild(popup);
+      document.body.appendChild(overlay);
+
+      requestAnimationFrame(() => {
+        overlay.style.opacity = "1";
+        popup.style.transform = "scale(1)";
+      });
+    }
+
+    function abrirPopup(nome, preco, btn) {
+      if (window.lojaFechada) {
+        mostrarAlertaLojaFechada("A loja está fechada no momento. Você pode apenas visualizar o cardápio.");
+        return;
+      }
+      const popup = document.getElementById("popupProduto");
+
+      produtoAtual = nome; // 🔥 ESSENCIAL
+      precoAtual = preco || 20.00;
+
+      imgAtual = "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38"; // fallback
+
+      if (btn && btn.closest) {
+        const card = btn.closest(".card");
+        if (card) {
+          const imgEl = card.querySelector("img");
+          if (imgEl) imgAtual = imgEl.src;
+        }
+      }
+
+      // Garantia extra: procura a imagem pelo nome do produto na tela
+      if (imgAtual === "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38") {
+        const cards = document.querySelectorAll(".card");
+        for (let card of cards) {
+          const titleEl = card.querySelector(".title");
+          if (titleEl && titleEl.innerText.trim() === nome) {
+            const imgEl = card.querySelector("img");
+            if (imgEl) {
+              imgAtual = imgEl.src;
+              break;
+            }
+          }
+        }
+      }
+
+      const boxPreparo = document.getElementById("boxPreparo");
+      const opcoesPreparoDiv = boxPreparo.querySelector(".opcoes-preparo");
+      const boxSabores = document.getElementById("boxSabores");
+      const containerSabores = document.getElementById("containerSabores");
+
+      // Buscar as informações do produto
+      let produtoInfo = null;
+      if (window.dadosCardapio) {
+        produtoInfo = window.dadosCardapio.find(p => p.Nome === nome);
+      }
+
+      // SABORES
+      let campoSabores = produtoInfo ? (produtoInfo.Sabores || produtoInfo.Sabor) : null;
+      
+      // Fallback para Salgadinhos se não tiver configurado na planilha ainda
+      if ((!campoSabores || campoSabores.trim() === "") && produtoInfo && produtoInfo.Categoria && (produtoInfo.Categoria.toLowerCase().includes("salgadinho") || produtoInfo.Categoria.toLowerCase().includes("salgado"))) {
+        campoSabores = "Coxinha, Risólis de Carne, Bolinha de Queijo, Enroladinho de Salsicha, Kibe";
+      }
+
+      if (campoSabores && campoSabores.trim() !== "") {
+        boxSabores.style.display = "block";
+
+        // Verifica se o produto permite múltiplos sabores através da planilha (coluna "Multiplo" ou "MultiplosSabores" = "Sim")
+        const campoMultiplo = produtoInfo ? (produtoInfo.Multiplo || produtoInfo.MultiplosSabores || "") : "";
+        const permiteMultiplo = campoMultiplo.toString().toLowerCase().trim() === "sim";
+        
+        const tipoInput = permiteMultiplo ? "checkbox" : "radio";
+        const classeCustom = permiteMultiplo ? "checkbox-custom" : "radio";
+        const instrucaoSabor = permiteMultiplo ? "Escolha os sabores (pode selecionar mais de um):" : "Escolha o sabor:";
+        
+        document.getElementById("labelSabores").innerText = instrucaoSabor;
+
+        const saboresArray = campoSabores.split(",").map(s => s.trim());
+        containerSabores.innerHTML = saboresArray.map((s, idx) => {
+          const isChecked = (!permiteMultiplo && idx === 0) ? "checked" : "";
+          return `
+          <label class="opcao-card">
+            <input type="${tipoInput}" name="saborSelecionado" value="${s}" ${isChecked}>
+            <div class="info">
+              <span class="titulo">${s}</span>
+            </div>
+            <div class="${classeCustom}"></div>
+          </label>
+          `;
+        }).join("");
+      } else {
+        boxSabores.style.display = "none";
+        containerSabores.innerHTML = "";
+      }
+
+      // TAMANHOS / PREPARO
+      const campoTamanhos = produtoInfo ? (produtoInfo.Tamanhos || produtoInfo.Tamanho) : null;
+      if (campoTamanhos && campoTamanhos.trim() !== "") {
+        boxPreparo.style.display = "block";
+        const tamanhosArray = campoTamanhos.split(",").map(t => t.trim());
+        let htmlTamanhos = "";
+        tamanhosArray.forEach((t, i) => {
+          const partes = t.split(":");
+          if(partes.length === 2) {
+             const nomeTamanho = partes[0].trim();
+             let precoTamanhoStr = partes[1].trim().replace(",", ".");
+             const precoTamanho = parseFloat(precoTamanhoStr);
+             const check = i === 0 ? "checked" : "";
+             htmlTamanhos += `
+              <label class="opcao-card">
+                <input type="radio" name="preparo" value="${nomeTamanho}" data-preco="${precoTamanho}" ${check}>
+                <div class="info">
+                  <span class="titulo">${nomeTamanho}</span>
+                  <span class="preco">R$ ${precoTamanho.toFixed(2).replace('.', ',')}</span>
+                </div>
+                <div class="radio"></div>
+              </label>
+             `;
+          }
+        });
+        opcoesPreparoDiv.innerHTML = htmlTamanhos;
+      } else {
+        boxPreparo.style.display = "none";
+        opcoesPreparoDiv.innerHTML = "";
+      }
+
+      popup.style.display = "flex";
+
+      document.getElementById("nomeProduto").innerText = nome;
+
+      setTimeout(() => {
+        popup.classList.add("active");
+      }, 10);
+
+      document.querySelector(".bottom-menu").style.display = "none";
+    }
+
+    function confirmarProduto(btn) {
+
+      const boxSabores = document.getElementById("boxSabores");
+      let sabor = "";
+      if (boxSabores.style.display !== "none") {
+        const selecionados = Array.from(document.querySelectorAll('input[name="saborSelecionado"]:checked')).map(el => el.value);
+        sabor = selecionados.join(", ");
+      }
+      const obs = document.getElementById("observacao").value;
+
+      let preparoFinal = "";
+      let precoFinal = precoAtual;
+
+      const boxPreparo = document.getElementById("boxPreparo");
+      if (boxPreparo.style.display !== "none") {
+        const preparoSelecionado = document.querySelector('input[name="preparo"]:checked');
+        if (preparoSelecionado) {
+          preparoFinal = preparoSelecionado.value;
+          const precoDoPreparo = parseFloat(preparoSelecionado.getAttribute("data-preco"));
+          if(!isNaN(precoDoPreparo)) {
+            precoFinal = precoDoPreparo;
+          }
+        }
+      }
+
+      let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+
+      carrinho.push({
+        nome: produtoAtual,
+        sabor: sabor,
+        preparo: preparoFinal,
+        observacao: obs,
+        preco: precoFinal,
+        img: imgAtual,
+        qtd: 1
+      });
+
+      localStorage.setItem("carrinho", JSON.stringify(carrinho));
+
+      animarParaCarrinho(btn);
+      atualizarCarrinho();
+      fecharPopup();
+      mostrarToast("🛒 Adicionado ao carrinho!");
+    }
+
+    function atualizarCarrinho() {
+      let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+      document.getElementById("cart-count").innerText = carrinho.length;
+    }
+
+    /* carrega produtos e atualiza carrinho ao abrir o site */
+    window.onload = () => {
+      atualizarCarrinho();
+      carregarProdutosDoGoogleSheets();
+    };
+
+    function carregarProdutosDoGoogleSheets() {
+      // LINK DA PLANILHA (CSV Público) - Altere para o link real do Google Sheets do cliente no config.js
+      const csvUrl = CONFIG.CSV_CARDAPIO_URL + "&t=" + new Date().getTime();
+
+      Papa.parse(csvUrl, {
+        download: true,
+        header: true,
+        complete: function (results) {
+          const dados = results.data;
+          window.dadosCardapio = dados;
+          renderizarCardapio(dados);
+        },
+        error: function (err) {
+          console.error("Erro ao carregar planilha", err);
+          document.getElementById("cardapio-container").innerHTML = "<div style='padding:20px; text-align:center;'>Erro ao carregar o cardápio. Verifique a planilha.</div>";
+        }
+      });
+    }
+
+    function renderizarCardapio(dados) {
+      const container = document.getElementById("cardapio-container");
+      container.innerHTML = "";
+
+      // Agrupar produtos por Categoria
+      const categorias = {};
+
+      dados.forEach(item => {
+        if (!item.Categoria || !item.Nome) return; // ignora linhas vazias
+
+        if (!categorias[item.Categoria]) {
+          categorias[item.Categoria] = [];
+        }
+        categorias[item.Categoria].push(item);
+      });
+
+      // Renderiza as categorias
+      for (const [catName, produtos] of Object.entries(categorias)) {
+        let html = `
+          <div class="section">
+            <h2>${catName}</h2>
+            <div class="cards">
+        `;
+
+        produtos.forEach(prod => {
+          let precoStr = (prod.Preco || "").trim();
+          let precoNum = parseFloat(precoStr.replace(",", "."));
+          let precoFormatado = "";
+
+          if (isNaN(precoNum)) {
+             // Tem texto misturado, ex: "A partir de 15,00"
+             precoFormatado = precoStr; // O card exibe o texto completo
+             // Extrai apenas a parte numérica para a conta (caso não haja tamanhos)
+             const numeros = precoStr.match(/\d+([.,]\d+)?/);
+             precoNum = numeros ? parseFloat(numeros[0].replace(",", ".")) : 0;
+          } else {
+             precoFormatado = "R$ " + precoNum.toFixed(2).replace(".", ",");
+          }
+          let img = prod.Imagem || "hero.jpg.png";
+          
+          // Verifica se a categoria é de bebidas para não cortar a imagem
+          let nomeCat = catName.toLowerCase();
+          let isBebida = nomeCat.includes("bebida") || nomeCat.includes("refrigerante") || nomeCat.includes("suco") || nomeCat.includes("água") || nomeCat.includes("agua");
+          let extraClass = isBebida ? 'class="img-contain"' : '';
+
+          html += `
+            <div class="card">
+              <img src="${img}" ${extraClass}>
+              <div class="card-content">
+                <div class="title">${prod.Nome}</div>
+                <div class="price">${precoFormatado}</div>
+                <button class="add-btn" onclick="abrirPopup('${prod.Nome}', ${precoNum}, this)">
+                  Escolher Esse!
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+
+        container.innerHTML += html;
+      }
+    }
+
+    // Função antiga removida
+
+    function fecharPopup() {
+      const popup = document.getElementById("popupProduto");
+
+      if (!popup) return;
+
+      popup.classList.remove("active");
+
+      setTimeout(() => {
+        popup.style.display = "none";
+      }, 300);
+
+      document.querySelector(".bottom-menu").style.display = "flex";
+    }
+
+    // 🔥 MOSTRA O MENU
+    document.querySelector(".bottom-menu").style.display = "flex";
+
+
+    function atualizarPreco() {
+      let preparo = document.querySelector('input[name="preparo"]:checked').value;
+
+      let total = precoBase;
+
+      if (preparo === "Pré-assada") {
+        total -= 5;
+      }
+
+      return total;
+    }
+
+    function addToCart(nome, preco, img) {
+      const observacao = document.getElementById("obsProduto").value;
+
+      const item = {
+        nome,
+        preco,
+        img,
+        observacao
+      };
+
+      let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+      carrinho.push(item);
+      localStorage.setItem("carrinho", JSON.stringify(carrinho));
+    }
+
+    function closeModal() {
+      document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function mostrarToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.innerText = msg;
+      toast.classList.add("show");
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2000);
+    }
+
+    function animarParaCarrinho(botao) {
+
+      const cart = document.getElementById("cartIcon").getBoundingClientRect();
+      const rect = botao.getBoundingClientRect();
+
+      const bolinha = document.createElement("div");
+      bolinha.classList.add("fly-item");
+
+      bolinha.style.top = rect.top + "px";
+      bolinha.style.left = rect.left + "px";
+
+      document.body.appendChild(bolinha);
+
+      setTimeout(() => {
+        bolinha.style.top = cart.top + "px";
+        bolinha.style.left = cart.left + "px";
+        bolinha.style.opacity = "0.3";
+        bolinha.style.transform = "scale(0.2)";
+      }, 50);
+
+      setTimeout(() => {
+        bolinha.remove();
+        animarCarrinho();
+      }, 800);
+    }
+
+    function animarCarrinho() {
+      const cart = document.getElementById("cartIcon");
+      cart.style.transform = "scale(1.4)";
+
+      setTimeout(() => {
+        cart.style.transform = "scale(1)";
+      }, 200);
+    }
+
+    function abrirCarrinho() {
+      const endereco = localStorage.getItem("enderecoUsuario");
+
+      if (!endereco) {
+        mostrarToast("📍 Adicione um endereço primeiro!");
+
+        // Abre automaticamente o modal de endereço para facilitar
+        setTimeout(() => {
+          document.getElementById("modalEndereco").style.display = "flex";
+        }, 800);
+
+        return;
+      }
+
+      window.location.href = "carrinho.html";
+    }
+
+
+    function abrirPerfil() {
+      window.location.href = "perfil.html";
+    }
+
+    function excluirEndereco(i) {
+
+      let lista = getEnderecos();
+
+      if (!lista[i]) {
+        console.log("Índice inválido:", i);
+        return;
+      }
+
+      if (confirm("Excluir este endereço?")) {
+        lista.splice(i, 1);
+        localStorage.setItem("enderecos", JSON.stringify(lista));
+
+        renderizarEnderecos();
+
+        alert("Endereço removido!");
+      }
+    }
+
+  </script>
+
+  <!-- TRAVA DE HORÁRIO DO SITE -->
+  <script>
+    (function() {
+      async function verificarHorarioLoja() {
+        const agora = new Date();
+        const hora = agora.getHours();
+        const minutos = agora.getMinutes();
+        
+        // A loja abre das 12:50 as 13:00.
+        let isFechadaExpediente = (hora < 12 || (hora === 12 && minutos < 50) || hora >= 13);
+        
+        // Verificar status manual via Google Sheets
+        let forceStatus = null;
+        try {
+          const csvUrl = CONFIG.CSV_STATUS_LOJA_URL;
+          const response = await fetch(csvUrl + "&t=" + new Date().getTime()); // Evita cache
+          const text = await response.text();
+          const textoMin = text.toLowerCase();
+          
+          if (textoMin.includes("fechada") || textoMin.includes("fechado")) {
+            forceStatus = true;
+          } else if (textoMin.includes("aberta") || textoMin.includes("aberto")) {
+            forceStatus = false;
+          }
+        } catch (e) {
+          console.error("Erro ao ler status da loja", e);
+        }
+
+        const isFechada = forceStatus !== null ? forceStatus : isFechadaExpediente;
+        window.lojaFechada = isFechada;
+        
+        if (isFechada) {
+          if (!document.getElementById("store-closed-overlay") && !sessionStorage.getItem("lojaFechadaDismissed")) {
+            // Embaça o conteúdo ao fundo
+            Array.from(document.body.children).forEach(child => {
+              if (child.id !== "store-closed-overlay" && child.tagName !== "SCRIPT" && child.tagName !== "STYLE") {
+                child.style.transition = "filter 0.3s ease";
+                child.style.filter = "blur(6px)";
+                child.style.pointerEvents = "none";
+              }
+            });
+
+            // Cria o overlay com fundo escuro translúcido e backdrop-filter
+            const overlay = document.createElement("div");
+            overlay.id = "store-closed-overlay";
+            overlay.style.position = "fixed";
+            overlay.style.top = "0";
+            overlay.style.left = "0";
+            overlay.style.width = "100vw";
+            overlay.style.height = "100vh";
+            overlay.style.backgroundColor = "rgba(0, 0, 0, 0.65)";
+            overlay.style.backdropFilter = "blur(10px)";
+            overlay.style.WebkitBackdropFilter = "blur(10px)";
+            overlay.style.zIndex = "20000";
+            overlay.style.display = "flex";
+            overlay.style.alignItems = "center";
+            overlay.style.justifyContent = "center";
+            overlay.style.padding = "20px";
+            overlay.style.boxSizing = "border-box";
+            overlay.style.opacity = "0";
+            overlay.style.transition = "opacity 0.4s ease";
+
+            // Bloqueia a rolagem da página
+            document.body.style.overflow = "hidden";
+
+            // Cria o container do popup com design premium e animação
+            const popup = document.createElement("div");
+            popup.style.background = "#ffffff";
+            popup.style.borderRadius = "28px";
+            popup.style.padding = "35px 25px";
+            popup.style.width = "100%";
+            popup.style.maxWidth = "360px";
+            popup.style.textAlign = "center";
+            popup.style.boxShadow = "0 25px 50px rgba(0, 0, 0, 0.3)";
+            popup.style.transform = "scale(0.8)";
+            popup.style.transition = "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+            popup.style.boxSizing = "border-box";
+
+            // Ícone de trava/fechado com gradiente
+            const iconContainer = document.createElement("div");
+            iconContainer.style.width = "75px";
+            iconContainer.style.height = "75px";
+            iconContainer.style.borderRadius = "50%";
+            iconContainer.style.background = "linear-gradient(135deg, #ff416c, #ff4b2b)";
+            iconContainer.style.display = "flex";
+            iconContainer.style.alignItems = "center";
+            iconContainer.style.justifyContent = "center";
+            iconContainer.style.margin = "0 auto 20px auto";
+            iconContainer.style.boxShadow = "0 10px 20px rgba(255, 65, 108, 0.3)";
+            iconContainer.innerHTML = "<span style='font-size: 34px;'>🔒</span>";
+
+            // Título
+            const title = document.createElement("h2");
+            title.innerText = "Loja Fechada";
+            title.style.margin = "0 0 15px 0";
+            title.style.color = "#222222";
+            title.style.fontSize = "24px";
+            title.style.fontWeight = "700";
+            title.style.fontFamily = "'Poppins', sans-serif";
+
+            // Mensagem descritiva
+            const message = document.createElement("p");
+            message.innerHTML = "No momento nossa loja está fechada.<br><br>Nosso horário de funcionamento é das <strong>12:50 às 13:00</strong>.<br><br>Voltaremos a atender às <strong>12:50</strong>!";
+            message.style.margin = "0 0 25px 0";
+            message.style.color = "#555555";
+            message.style.fontSize = "14px";
+            message.style.lineHeight = "1.6";
+            message.style.fontFamily = "'Poppins', sans-serif";
+
+            // Badge / Alerta de horário
+            const badge = document.createElement("div");
+            badge.innerHTML = "⏰ <strong>Abre hoje às 12:50</strong>";
+            badge.style.background = "#fff5f5";
+            badge.style.color = "#d62828";
+            badge.style.padding = "10px 18px";
+            badge.style.borderRadius = "14px";
+            badge.style.fontSize = "13px";
+            badge.style.display = "inline-block";
+            badge.style.border = "1px solid #ffe3e3";
+            badge.style.fontFamily = "'Poppins', sans-serif";
+
+            // Botão Ver Cardápio
+            const btnVerCardapio = document.createElement("button");
+            btnVerCardapio.innerText = "Ver a Loja";
+            btnVerCardapio.style.marginTop = "20px";
+            btnVerCardapio.style.padding = "14px 24px";
+            btnVerCardapio.style.background = "#222";
+            btnVerCardapio.style.color = "#fff";
+            btnVerCardapio.style.border = "none";
+            btnVerCardapio.style.borderRadius = "12px";
+            btnVerCardapio.style.cursor = "pointer";
+            btnVerCardapio.style.fontWeight = "bold";
+            btnVerCardapio.style.fontFamily = "'Poppins', sans-serif";
+            btnVerCardapio.style.width = "100%";
+            
+            btnVerCardapio.onclick = () => {
+              sessionStorage.setItem("lojaFechadaDismissed", "true");
+              const overlayToRemove = document.getElementById("store-closed-overlay");
+              if (overlayToRemove) overlayToRemove.remove();
+              document.body.style.overflow = "";
+              Array.from(document.body.children).forEach(child => {
+                if (child.tagName !== "SCRIPT" && child.tagName !== "STYLE") {
+                  child.style.filter = "";
+                  child.style.pointerEvents = "";
+                }
+              });
+            };
+
+            popup.appendChild(iconContainer);
+            popup.appendChild(title);
+            popup.appendChild(message);
+            popup.appendChild(badge);
+            popup.appendChild(btnVerCardapio);
+            overlay.appendChild(popup);
+            document.body.appendChild(overlay);
+
+            // Trigger de animação (fade in + pop)
+            requestAnimationFrame(() => {
+              overlay.style.opacity = "1";
+              popup.style.transform = "scale(1)";
+            });
+          }
+        } else {
+          // Se estiver no horário de funcionamento (>= 18h), remove a trava caso exista
+          const overlay = document.getElementById("store-closed-overlay");
+          if (overlay) {
+            overlay.remove();
+            document.body.style.overflow = "";
+            Array.from(document.body.children).forEach(child => {
+              if (child.tagName !== "SCRIPT" && child.tagName !== "STYLE") {
+                child.style.filter = "";
+                child.style.pointerEvents = "";
+              }
+            });
+          }
+        }
+      }
+
+      // Executa ao carregar e monitora
+      window.addEventListener("DOMContentLoaded", verificarHorarioLoja);
+      if (document.readyState === "complete" || document.readyState === "interactive") {
+        verificarHorarioLoja();
+      }
+      
+      // Checa a cada minuto para destravar ou travar automaticamente
+      setInterval(verificarHorarioLoja, 60000);
+    })();
+  </script>
+
+</body>
+
+</html>

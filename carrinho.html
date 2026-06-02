@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carrinho</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="favicon.png" type="image/png">
+<style>
+  .delivery-toggle {
+    display: flex;
+    background: #f0f0f0;
+    border-radius: 12px;
+    padding: 5px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+  }
+  .toggle-btn {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .toggle-btn.ativa {
+    background: #fff;
+    color: #d62828;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .endereco-entrega {
+    font-size: 14px;
+    color: #444;
+    background: #f9f9f9;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+    margin-top: 5px;
+  }
+</style>
+</head>
+
+<body>
+
+    <div class="checkout-header">
+  <button class="back-btn" onclick="history.back()">
+    <span class="arrow">←</span>
+  </button>
+  <h1>Revise seus itens</h1>
+</div>
+
+<section id="itensCarrinho"></section>
+
+<section class="card entrega">
+  <h3>Entrega desejada</h3>
+
+  <div class="delivery-toggle">
+    <div class="toggle-btn ativa" id="btn-delivery" onclick="setEntrega('delivery')">
+      🚚 Delivery
+    </div>
+    <div class="toggle-btn" id="btn-retirada" onclick="setEntrega('retirada')">
+      🏪 Retirada
+    </div>
+  </div>
+
+  <p class="endereco-entrega">
+     <span id="endereco"></span>
+  </p>
+</section>
+
+<section class="resumo">
+  <div>
+    <span>Subtotal</span>
+    <strong id="subtotal">R$ 0,00</strong>
+  </div>
+
+  <div>
+    <span>Taxa de entrega</span>
+    <strong id="frete-text">R$ 10,00</strong>
+  </div>
+
+  <div class="total">
+    <span>Total</span>
+    <strong id="total">R$ 0,00</strong>
+  </div>
+</section>
+
+<div class="payment-area">
+  <button class="pay-btn" onclick="finalizarPedido()">Ir para pagamento</button>
+</div>
+
+<footer style="text-align: center; padding: 30px 10px 100px 10px; font-size: 12px; color: #888; background: #fafafa; border-top: 1px solid #eee;">
+  © 2026 Casa da Pizza | Desenvolvido por <a href="https://www.instagram.com/thepixeloo/" target="_blank" style="color: #d32f2f; text-decoration: none; font-weight: bold;">@thepixeloo</a>
+</footer>
+
+<script>
+let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+
+carrinho = carrinho.filter(item =>
+  item && item.nome && item.preco && !isNaN(item.preco)
+);
+
+// Atualiza o localStorage removendo os itens quebrados
+localStorage.setItem("carrinho", JSON.stringify(carrinho));
+
+const container = document.getElementById("itensCarrinho");
+
+function renderCarrinho(){
+
+  container.innerHTML = "";
+  let subtotal = 0;
+
+  carrinho.forEach((item, i) => {
+
+    const precoUnit = parseFloat(item.preco);
+const qtd = item.qtd || 1;
+const totalItem = precoUnit * qtd;
+
+subtotal += totalItem;
+
+    container.innerHTML += `
+      <div class="item">
+        <img src="${item.img || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38'}">
+
+        <div>
+          <h4>${item.nome}</h4>
+          <p>${item.sabor || ""}${item.preparo ? " • Opção: " + item.preparo : ""}</p>
+
+          ${item.observacao ? `<small>📝 ${item.observacao}</small>` : ""}
+
+          <p class="preco">R$ ${(precoUnit * qtd).toFixed(2)}</p>
+        </div>
+
+        <div class="qtd-box">
+  <button onclick="menos(${i})">−</button>
+  <span>${item.qtd || 1}</span>
+  <button onclick="mais(${i})">+</button>
+</div>
+    `;
+  });
+
+  const tipoEntrega = localStorage.getItem("tipoEntrega") || "delivery";
+  const frete = tipoEntrega === "retirada" ? 0 : (parseFloat(localStorage.getItem("freteUsuario")) || 10);
+  
+  document.getElementById("subtotal").innerText = "R$ " + subtotal.toFixed(2).replace('.', ',');
+  document.getElementById("frete-text").innerText = tipoEntrega === "retirada" ? "Grátis" : ("R$ " + frete.toFixed(2).replace('.', ','));
+  document.getElementById("total").innerText = "R$ " + (subtotal + frete).toFixed(2).replace('.', ',');
+}
+
+function remover(i){
+  carrinho.splice(i,1);
+  localStorage.setItem("carrinho",JSON.stringify(carrinho));
+  renderCarrinho();
+}
+
+function mais(i){
+  carrinho[i].qtd = (carrinho[i].qtd || 1) + 1;
+  localStorage.setItem("carrinho", JSON.stringify(carrinho));
+  renderCarrinho();
+}
+
+function menos(i){
+  if((carrinho[i].qtd || 1) > 1){
+    carrinho[i].qtd--;
+    localStorage.setItem("carrinho", JSON.stringify(carrinho));
+    renderCarrinho();
+  } else {
+    remover(i);
+  }
+}
+
+renderCarrinho();
+
+function setEntrega(tipo) {
+  const btnDelivery = document.getElementById("btn-delivery");
+  const btnRetirada = document.getElementById("btn-retirada");
+  const enderecoEl = document.getElementById("endereco");
+
+  localStorage.setItem("tipoEntrega", tipo);
+
+  if (tipo === 'retirada') {
+    btnRetirada.classList.add("ativa");
+    btnDelivery.classList.remove("ativa");
+    enderecoEl.textContent = "📍 Retirada: Rua Odilio de Medeiros 210 (Chatuba)";
+  } else {
+    btnDelivery.classList.add("ativa");
+    btnRetirada.classList.remove("ativa");
+    const enderecoSalvo = localStorage.getItem("enderecoUsuario");
+    enderecoEl.textContent = enderecoSalvo ? `📍 ${enderecoSalvo}` : "📍 Endereço não encontrado";
+  }
+
+  renderCarrinho();
+}
+
+// Inicializa a entrega corretamente
+const tipoAtual = localStorage.getItem("tipoEntrega") || "delivery";
+setEntrega(tipoAtual);
+
+window.addEventListener("storage", () => {
+  const tipoAtual = localStorage.getItem("tipoEntrega") || "delivery";
+  if (tipoAtual === "delivery") {
+    const enderecoSalvo = localStorage.getItem("enderecoUsuario");
+    const enderecoEl = document.getElementById("endereco");
+    if (enderecoEl && enderecoSalvo) {
+      enderecoEl.textContent = `📍 ${enderecoSalvo}`;
+    }
+  }
+});
+
+function mostrarAlertaLojaFechada(msg) {
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100vw";
+  overlay.style.height = "100vh";
+  overlay.style.backgroundColor = "rgba(0,0,0,0.6)";
+  overlay.style.backdropFilter = "blur(5px)";
+  overlay.style.zIndex = "25000";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.opacity = "0";
+  overlay.style.transition = "opacity 0.3s ease";
+
+  const popup = document.createElement("div");
+  popup.style.background = "#fff";
+  popup.style.borderRadius = "24px";
+  popup.style.padding = "30px 20px";
+  popup.style.width = "90%";
+  popup.style.maxWidth = "320px";
+  popup.style.textAlign = "center";
+  popup.style.boxShadow = "0 15px 35px rgba(0,0,0,0.2)";
+  popup.style.transform = "scale(0.8)";
+  popup.style.transition = "transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+
+  popup.innerHTML = `
+    <div style="font-size: 45px; margin-bottom: 10px;">🔒</div>
+    <h3 style="margin: 0 0 10px; color: #222; font-family: 'Poppins', sans-serif; font-size: 22px;">Loja Fechada</h3>
+    <p style="margin: 0 0 20px; color: #555; font-size: 14px; font-family: 'Poppins', sans-serif; line-height: 1.5;">${msg}</p>
+    <button style="width: 100%; padding: 14px; background: #222; color: #fff; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 15px;">Entendi</button>
+  `;
+
+  popup.querySelector("button").onclick = () => {
+    overlay.style.opacity = "0";
+    popup.style.transform = "scale(0.8)";
+    setTimeout(() => overlay.remove(), 300);
+  };
+
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+
+  requestAnimationFrame(() => {
+    overlay.style.opacity = "1";
+    popup.style.transform = "scale(1)";
+  });
+}
+
+function finalizarPedido() {
+  if (window.lojaFechada) {
+    mostrarAlertaLojaFechada("A loja está fechada. Não é possível enviar novos pedidos agora.");
+    return;
+  }
+  const carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+  const endereco = localStorage.getItem("enderecoUsuario");
+
+  if (carrinho.length === 0) {
+    alert("Seu carrinho está vazio 🛒");
+    return;
+  }
+
+  const tipoEntrega = localStorage.getItem("tipoEntrega") || "delivery";
+  if (tipoEntrega === "delivery" && !endereco) {
+    alert("Por favor, selecione um endereço 📍");
+    return;
+  }
+
+  // tudo certo → vai para pagamento
+  window.location.href = "pagamento.html";
+}
+
+
+
+</script>
+
+  <!-- TRAVA DE HORÁRIO DO SITE -->
+  <script>
+    (function() {
+      async function verificarHorarioLoja() {
+        const agora = new Date();
+        const hora = agora.getHours();
+        const minutos = agora.getMinutes();
+        
+        // A loja abre das 12:50 as 13:00.
+        let isFechadaExpediente = (hora < 12 || (hora === 12 && minutos < 50) || hora >= 13);
+        
+        // Verificar status manual via Google Sheets
+        let forceStatus = null;
+        try {
+          const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQYMTTe6KNxSLYQI76__LPoQsbCSTanvqMDKas7FsDVgkJCZJhCX0mOooD_ra1QbFyO7VXLKbzIsNkj/pub?output=csv";
+          const response = await fetch(csvUrl + "&t=" + new Date().getTime()); // Evita cache
+          const text = await response.text();
+          const textoMin = text.toLowerCase();
+          
+          if (textoMin.includes("fechada") || textoMin.includes("fechado")) {
+            forceStatus = true;
+          } else if (textoMin.includes("aberta") || textoMin.includes("aberto")) {
+            forceStatus = false;
+          }
+        } catch (e) {
+          console.error("Erro ao ler status da loja", e);
+        }
+
+        const isFechada = forceStatus !== null ? forceStatus : isFechadaExpediente;
+        window.lojaFechada = isFechada;
+        
+        if (isFechada) {
+          if (!document.getElementById("store-closed-overlay") && !sessionStorage.getItem("lojaFechadaDismissed")) {
+            // Embaça o conteúdo ao fundo
+            Array.from(document.body.children).forEach(child => {
+              if (child.id !== "store-closed-overlay" && child.tagName !== "SCRIPT" && child.tagName !== "STYLE") {
+                child.style.transition = "filter 0.3s ease";
+                child.style.filter = "blur(6px)";
+                child.style.pointerEvents = "none";
+              }
+            });
+
+            // Cria o overlay com fundo escuro translúcido e backdrop-filter
+            const overlay = document.createElement("div");
+            overlay.id = "store-closed-overlay";
+            overlay.style.position = "fixed";
+            overlay.style.top = "0";
+            overlay.style.left = "0";
+            overlay.style.width = "100vw";
+            overlay.style.height = "100vh";
+            overlay.style.backgroundColor = "rgba(0, 0, 0, 0.65)";
+            overlay.style.backdropFilter = "blur(10px)";
+            overlay.style.WebkitBackdropFilter = "blur(10px)";
+            overlay.style.zIndex = "20000";
+            overlay.style.display = "flex";
+            overlay.style.alignItems = "center";
+            overlay.style.justifyContent = "center";
+            overlay.style.padding = "20px";
+            overlay.style.boxSizing = "border-box";
+            overlay.style.opacity = "0";
+            overlay.style.transition = "opacity 0.4s ease";
+
+            // Bloqueia a rolagem da página
+            document.body.style.overflow = "hidden";
+
+            // Cria o container do popup com design premium e animação
+            const popup = document.createElement("div");
+            popup.style.background = "#ffffff";
+            popup.style.borderRadius = "28px";
+            popup.style.padding = "35px 25px";
+            popup.style.width = "100%";
+            popup.style.maxWidth = "360px";
+            popup.style.textAlign = "center";
+            popup.style.boxShadow = "0 25px 50px rgba(0, 0, 0, 0.3)";
+            popup.style.transform = "scale(0.8)";
+            popup.style.transition = "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+            popup.style.boxSizing = "border-box";
+
+            // Ícone de trava/fechado com gradiente
+            const iconContainer = document.createElement("div");
+            iconContainer.style.width = "75px";
+            iconContainer.style.height = "75px";
+            iconContainer.style.borderRadius = "50%";
+            iconContainer.style.background = "linear-gradient(135deg, #ff416c, #ff4b2b)";
+            iconContainer.style.display = "flex";
+            iconContainer.style.alignItems = "center";
+            iconContainer.style.justifyContent = "center";
+            iconContainer.style.margin = "0 auto 20px auto";
+            iconContainer.style.boxShadow = "0 10px 20px rgba(255, 65, 108, 0.3)";
+            iconContainer.innerHTML = "<span style='font-size: 34px;'>🔒</span>";
+
+            // Título
+            const title = document.createElement("h2");
+            title.innerText = "Loja Fechada";
+            title.style.margin = "0 0 15px 0";
+            title.style.color = "#222222";
+            title.style.fontSize = "24px";
+            title.style.fontWeight = "700";
+            title.style.fontFamily = "'Poppins', sans-serif";
+
+            // Mensagem descritiva
+            const message = document.createElement("p");
+            message.innerHTML = "No momento nossa loja está fechada.<br><br>Nosso horário de funcionamento é das <strong>12:50 às 13:00</strong>.<br><br>Voltaremos a atender às <strong>12:50</strong>!";
+            message.style.margin = "0 0 25px 0";
+            message.style.color = "#555555";
+            message.style.fontSize = "14px";
+            message.style.lineHeight = "1.6";
+            message.style.fontFamily = "'Poppins', sans-serif";
+
+            // Badge / Alerta de horário
+            const badge = document.createElement("div");
+            badge.innerHTML = "⏰ <strong>Abre hoje às 12:50</strong>";
+            badge.style.background = "#fff5f5";
+            badge.style.color = "#d62828";
+            badge.style.padding = "10px 18px";
+            badge.style.borderRadius = "14px";
+            badge.style.fontSize = "13px";
+            badge.style.display = "inline-block";
+            badge.style.border = "1px solid #ffe3e3";
+            badge.style.fontFamily = "'Poppins', sans-serif";
+
+            // Botão Ver Cardápio
+            const btnVerCardapio = document.createElement("button");
+            btnVerCardapio.innerText = "Ver a Loja";
+            btnVerCardapio.style.marginTop = "20px";
+            btnVerCardapio.style.padding = "14px 24px";
+            btnVerCardapio.style.background = "#222";
+            btnVerCardapio.style.color = "#fff";
+            btnVerCardapio.style.border = "none";
+            btnVerCardapio.style.borderRadius = "12px";
+            btnVerCardapio.style.cursor = "pointer";
+            btnVerCardapio.style.fontWeight = "bold";
+            btnVerCardapio.style.fontFamily = "'Poppins', sans-serif";
+            btnVerCardapio.style.width = "100%";
+            
+            btnVerCardapio.onclick = () => {
+              sessionStorage.setItem("lojaFechadaDismissed", "true");
+              const overlayToRemove = document.getElementById("store-closed-overlay");
+              if (overlayToRemove) overlayToRemove.remove();
+              document.body.style.overflow = "";
+              Array.from(document.body.children).forEach(child => {
+                if (child.tagName !== "SCRIPT" && child.tagName !== "STYLE") {
+                  child.style.filter = "";
+                  child.style.pointerEvents = "";
+                }
+              });
+            };
+
+            popup.appendChild(iconContainer);
+            popup.appendChild(title);
+            popup.appendChild(message);
+            popup.appendChild(badge);
+            popup.appendChild(btnVerCardapio);
+            overlay.appendChild(popup);
+            document.body.appendChild(overlay);
+
+            // Trigger de animação (fade in + pop)
+            requestAnimationFrame(() => {
+              overlay.style.opacity = "1";
+              popup.style.transform = "scale(1)";
+            });
+          }
+        } else {
+          // Se estiver no horário de funcionamento (>= 18h), remove a trava caso exista
+          const overlay = document.getElementById("store-closed-overlay");
+          if (overlay) {
+            overlay.remove();
+            document.body.style.overflow = "";
+            Array.from(document.body.children).forEach(child => {
+              if (child.tagName !== "SCRIPT" && child.tagName !== "STYLE") {
+                child.style.filter = "";
+                child.style.pointerEvents = "";
+              }
+            });
+          }
+        }
+      }
+
+      // Executa ao carregar e monitora
+      window.addEventListener("DOMContentLoaded", verificarHorarioLoja);
+      if (document.readyState === "complete" || document.readyState === "interactive") {
+        verificarHorarioLoja();
+      }
+      
+      // Checa a cada minuto para destravar ou travar automaticamente
+      setInterval(verificarHorarioLoja, 60000);
+    })();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil</title>
+<link rel="icon" href="favicon.png" type="image/png">
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="checkout-header">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <h1>Meu Perfil</h1>
+  </div>
+
+  <!-- CONTEÚDO -->
+  <div class="container">
+
+    <section class="card">
+      <h3>Seus dados</h3>
+
+      <div class="linha-perfil">
+        <span>Nome</span>
+        <strong id="nome">Carregando...</strong>
+      </div>
+
+      <div class="linha-perfil">
+        <span>Telefone</span>
+        <strong id="telefone">Carregando...</strong>
+      </div>
+
+      <div class="linha-perfil">
+        <span>Email</span>
+        <strong id="email">Carregando...</strong>
+      </div>
+
+    </section>
+
+  </div>
+
+</div>
+
+<!-- MENU (APENAS UM) -->
+<div class="bottom-menu">
+  <div class="menu-item" onclick="irPara('index.html')">
+    <span>🏠</span>
+    <p>Home</p>
+  </div>
+
+    <div class="menu-item" onclick="irPara('carrinho.html')">
+    <span>🛒</span>
+    <p>Carrinho</p>
+  </div>
+
+  <div class="menu-item ativo">
+    <span>👤</span>
+    <p>Perfil</p>
+  </div>
+</div>
+
+<script>
+const cliente = JSON.parse(localStorage.getItem("cliente")) || {};
+
+document.getElementById("nome").innerText = cliente.nome || "Não informado";
+document.getElementById("telefone").innerText = cliente.telefone || "Não informado";
+document.getElementById("email").innerText = cliente.email || "Não informado";
+
+function irPara(pagina){
+  window.location.href = pagina;
+}
+</script>
+
+</body>
+</html>

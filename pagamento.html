@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagamento</title>
+  <link rel="stylesheet" href="pagamento.css">
+  <link rel="icon" href="favicon.png" type="image/png">
+</head>
+
+<body>
+
+  <div class="container">
+
+    <header class="header">
+      <button onclick="history.back()">←</button>
+      <h2>Confirme seu pedido</h2>
+    </header>
+
+    <!-- SEUS DADOS -->
+    <section class="card">
+      <h3>Seus dados</h3>
+
+      <label>Nome completo</label>
+      <input type="text" id="nomeCliente" placeholder="Digite seu nome" required>
+
+      <label>Telefone / WhatsApp</label>
+      <input type="tel" id="telefoneCliente" placeholder="(21) 9XXXX-XXXX" required inputmode="numeric">
+
+      <label>Email (opcional)</label>
+      <input type="email" id="emailCliente" placeholder="Seu e-mail">
+    </section>
+
+    <!-- ENDEREÇO -->
+    <section class="card">
+      <h3 id="tituloEndereco">Endereço de Entrega</h3>
+      <p id="endereco">Carregando endereço...</p>
+    </section>
+
+    <!-- PAGAMENTO -->
+    <section class="card">
+      <h3>Pagamento</h3>
+
+      <label class="opcao">
+        <input type="radio" name="pagamento" value="dinheiro" checked onchange="trocoToggle()">
+        💵 Dinheiro
+      </label>
+
+      <div id="trocoBox" class="troco-box">
+        <input type="radio" name="pagamento" value="dinheiro" checked onchange="trocoToggle()">
+        <input type="text" id="trocoPara" placeholder="Troco para quanto?" inputmode="numeric">
+        <button type="button" onclick="semTroco()">Não preciso de troco</button>
+      </div>
+
+      <label class="opcao">
+        <input type="radio" name="pagamento" value="cartao" onchange="trocoToggle()">
+        💳 Cartão de crédito / débito
+      </label>
+
+      <label class="opcao">
+        <input type="radio" name="pagamento" value="pix" onchange="pagamentoToggle()">
+        🔷 Pix
+      </label>
+
+      <div id="pixArea" class="pix-area">
+        <div class="pix-box">
+          <span id="pixChave">14224551730</span>
+          <button type="button" id="btnCopiarPix" onclick="copiarPix()">Copiar</button>
+        </div>
+
+        <p class="pix-aviso">
+          Pedro Otávio
+          Banco: Nubank
+          📲 Após finalizar o pedido, envie o comprovante de pagamento pelo WhatsApp.
+        </p>
+      </div>
+    </section>
+
+    <!-- OBSERVAÇÕES -->
+    <section class="card">
+      <h3>Observações</h3>
+      <textarea id="obsPedido" placeholder="Ex: troco, ponto de referência..."></textarea>
+    </section>
+
+    <!-- RESUMO -->
+    <section class="card">
+      <div class="linha">
+        <span>Subtotal</span>
+        <strong id="subtotal">R$ 0,00</strong>
+      </div>
+
+      <div class="linha">
+        <span>Taxa de entrega</span>
+        <strong id="frete-text">R$ 10,00</strong>
+      </div>
+
+      <div class="linha" id="linhaPagamento">
+        <span>Forma de pagamento</span>
+        <strong id="formaPagamento">Dinheiro</strong>
+      </div>
+
+      <div class="linha" id="linhaTroco" style="display:none;">
+        <span>Troco</span>
+        <strong id="infoTroco">—</strong>
+      </div>
+
+      <div class="linha total">
+        <span>Total</span>
+        <strong id="total">R$ 0,00</strong>
+      </div>
+    </section>
+
+    <!-- BOTÃO FINAL -->
+    <button class="btn-finalizar" onclick="finalizar()">Finalizar pedido</button>
+
+  </div>
+
+  <footer style="text-align: center; padding: 30px 10px 30px 10px; font-size: 12px; color: #888; background: #fafafa; border-top: 1px solid #eee;">
+    © 2026 Casa da Pizza | Desenvolvido por <a href="https://www.instagram.com/thepixeloo/" target="_blank" style="color: #d32f2f; text-decoration: none; font-weight: bold;">@thepixeloo</a>
+  </footer>
+
+  <script src="config.js?v=2"></script>
+  <script>
+    const carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+    const endereco = localStorage.getItem("enderecoUsuario");
+
+    let subtotal = carrinho.reduce((s, i) => s + parseFloat(i.preco), 0);
+    const tipoEntrega = localStorage.getItem("tipoEntrega") || "delivery";
+    const frete = tipoEntrega === "retirada" ? 0 : (parseFloat(localStorage.getItem("freteUsuario")) || 10);
+
+    document.getElementById("subtotal").innerText = "R$ " + subtotal.toFixed(2).replace('.', ',');
+    document.getElementById("frete-text").innerText = tipoEntrega === "retirada" ? "Grátis" : ("R$ " + frete.toFixed(2).replace('.', ','));
+    document.getElementById("total").innerText = "R$ " + (subtotal + frete).toFixed(2).replace('.', ',');
+
+    if (tipoEntrega === "retirada") {
+      document.getElementById("tituloEndereco").innerText = "Local de Retirada";
+      document.getElementById("endereco").innerText = "Rua Odilio de Medeiros 210 (Chatuba)";
+    } else {
+      document.getElementById("tituloEndereco").innerText = "Endereço de Entrega";
+      document.getElementById("endereco").innerText = endereco || "Endereço não encontrado";
+    }
+
+    async function finalizar() {
+      if (window.lojaFechada) {
+        alert("A loja está fechada. Não é possível finalizar pedidos no momento.");
+        return;
+      }
+
+      const nome = document.getElementById("nomeCliente").value.trim();
+      const telefone = document.getElementById("telefoneCliente").value.trim();
+
+      if (!nome) {
+        alert("Por favor, informe seu nome.");
+        return;
+      }
+
+      if (!telefone) {
+        alert("Por favor, informe seu telefone.");
+        return;
+      }
+
+      const telefoneNumeros = telefone.replace(/\D/g, "");
+      if (telefoneNumeros.length < 10) {
+        alert("Digite um telefone válido.");
+        return;
+      }
+
+      const endereco = localStorage.getItem("enderecoUsuario");
+      const carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+      const pagamento = document.querySelector('input[name="pagamento"]:checked').value;
+      const troco = document.getElementById("infoTroco").textContent;
+      const total = document.getElementById("total").textContent;
+
+      const obsPedido = document.getElementById("obsPedido")
+        ? document.getElementById("obsPedido").value
+        : "";
+
+      let textoItens = "";
+
+      carrinho.forEach(item => {
+        let detalhesItem = item.sabor || "";
+        if (item.preparo) detalhesItem += " • " + item.preparo;
+        textoItens += `• ${item.nome} (${detalhesItem}) - R$ ${item.preco}\n`;
+
+        if (item.observacao) {
+          textoItens += `   📝 Obs: ${item.observacao}\n`;
+        }
+      });
+
+      // 🔥 SALVA NO PERFIL
+      localStorage.setItem("cliente", JSON.stringify({
+        nome: nome,
+        telefone: telefone,
+        email: document.getElementById("emailCliente")
+          ? document.getElementById("emailCliente").value
+          : ""
+      }));
+
+      const tipoEntregaMensagem = localStorage.getItem("tipoEntrega") || "delivery";
+      let enderecoMensagem = "";
+
+      if (tipoEntregaMensagem === "retirada") {
+        enderecoMensagem = "🏪 Retirada na Loja: Rua Odilio de Medeiros 210 (Chatuba)";
+      } else {
+        enderecoMensagem = `📍 Endereço de Entrega:\n${endereco}`;
+      }
+
+      let primeiroNome = nome.split(' ')[0];
+      let mensagem =
+        `🧾 *PEDIDO CONFIRMADO!*\n\n` +
+        `Eba, ${primeiroNome}! Já recebemos o seu pedido por aqui.\n\n` +
+        `👤 *Cliente:* ${nome}\n` +
+        `📞 *Contato:* ${telefone}\n\n` +
+        `${enderecoMensagem}\n\n` +
+        `🍕 *Seu pedido:*\n` +
+        `${textoItens}`;
+
+      if (obsPedido && obsPedido.trim() !== "") {
+        mensagem += `\n\n📝 *Observações:*\n${obsPedido}`;
+      }
+
+      mensagem += `\n\n` +
+        `💵 *Pagamento:* ${pagamento}\n` +
+        `💵 *Troco:* ${troco}\n\n` +
+        `💰 *Total: ${total}*\n\n` +
+        `Obrigado por escolher a nossa casa! 🙏✨\n` +
+        `Daqui a pouco mandamos atualizações!`;
+
+      const numeroWhats = CONFIG.WHATSAPP_NUMERO;
+
+      // Utilizando wa.me para forçar a abertura direto no aplicativo no celular da forma mais automática possível
+      const urlWhats = `https://wa.me/${numeroWhats}?text=${encodeURIComponent(mensagem)}`;
+
+      // Mudar texto do botão para dar feedback
+      const btn = document.querySelector(".btn-finalizar");
+      btn.innerText = "Enviando...";
+      btn.disabled = true;
+
+      // URL do Google Apps Script
+      const GOOGLE_SCRIPT_URL = CONFIG.GOOGLE_SCRIPT_URL;
+
+      const payloadPlanilha = {
+        action: "novo_pedido",
+        cliente: nome,
+        telefone: telefone,
+        total: total,
+        itens: textoItens + (obsPedido ? ("\nObs: " + obsPedido) : ""),
+        endereco: enderecoMensagem,
+        pagamento: pagamento + (troco !== "—" ? (" (" + troco + ")") : "")
+      };
+
+      if (GOOGLE_SCRIPT_URL !== "COLE_AQUI_A_URL_DO_SEU_WEB_APP") {
+        // Envia para o Google Sheets em segundo plano e aguarda
+        try {
+          await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify(payloadPlanilha)
+          });
+        } catch (err) {
+          console.log("Erro Google Sheets", err);
+        }
+      }
+
+      // Esvazia carrinho
+      localStorage.removeItem("carrinho");
+
+      // Redireciona a janela atual primeiro e, no cenário ideal, o WhatsApp é aberto em seguida.
+      window.location.href = urlWhats;
+
+      // Opcional: Volta para o index após um tempo para limpar a tela de pagamento
+      setTimeout(() => {
+        window.location.replace("index.html");
+      }, 3000);
+    }
+
+    function trocoToggle() {
+      const tipo = document.querySelector('input[name="pagamento"]:checked').value;
+      const box = document.getElementById("trocoBox");
+      const linhaTroco = document.getElementById("linhaTroco");
+      const infoTroco = document.getElementById("infoTroco");
+
+      if (tipo === "dinheiro") {
+        box.classList.add("ativo");
+        linhaTroco.style.display = "flex";
+      } else {
+        box.classList.remove("ativo");
+        linhaTroco.style.display = "none";
+        infoTroco.textContent = "—"; // 👈 limpa corretamente
+      }
+    }
+
+    function semTroco() {
+      document.getElementById("trocoPara").value = "";
+      document.getElementById("infoTroco").textContent = "Não precisa de troco";
+      document.getElementById("trocoBox").classList.remove("ativo");
+    }
+
+    document.getElementById("trocoPara").addEventListener("input", (e) => {
+      document.getElementById("infoTroco").textContent =
+        e.target.value ? `Troco para R$ ${e.target.value}` : "—";
+    });
+
+    trocoToggle();
+
+    function atualizarFormaPagamento() {
+      const tipo = document.querySelector('input[name="pagamento"]:checked').value;
+      const texto = document.getElementById("formaPagamento");
+
+      if (tipo === "dinheiro") {
+        texto.textContent = "Dinheiro";
+      } else if (tipo === "cartao") {
+        texto.textContent = "Cartão de crédito / débito";
+      } else if (tipo === "pix") {
+        texto.textContent = "Pix";
+      }
+    }
+
+    // chama quando muda
+    document.querySelectorAll('input[name="pagamento"]').forEach(radio => {
+      radio.addEventListener("change", atualizarFormaPagamento);
+    });
+
+    // inicia correto ao carregar
+    atualizarFormaPagamento();
+
+    function pagamentoToggle() {
+      const tipo = document.querySelector('input[name="pagamento"]:checked').value;
+      const pixBox = document.getElementById("pixBox");
+
+      pixBox.classList.toggle("ativo", tipo === "pix");
+    }
+
+    document.querySelectorAll('input[name="pagamento"]').forEach(radio => {
+      radio.addEventListener("change", pagamentoToggle);
+    });
+
+    function copiarPix() {
+      const chave = document.getElementById("pixChave").innerText;
+      const btn = document.getElementById("btnCopiarPix");
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(chave);
+      } else {
+        // Fallback para quando o HTML for aberto direto da pasta (sem https)
+        const textArea = document.createElement("textarea");
+        textArea.value = chave;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand("copy");
+        } catch (err) {
+          console.error("Falha ao copiar", err);
+        }
+        document.body.removeChild(textArea);
+      }
+
+      btn.textContent = "Copiado ✓";
+      btn.classList.add("copiado");
+
+      setTimeout(() => {
+        btn.textContent = "Copiar";
+        btn.classList.remove("copiado");
+      }, 2000);
+    }
+
+    pagamentoToggle();
+
+    const trocoInput = document.getElementById("trocoPara");
+
+    trocoInput.addEventListener("input", () => {
+      let numeros = trocoInput.value.replace(/\D/g, "");
+
+      if (!numeros) {
+        trocoInput.value = "";
+        document.getElementById("infoTroco").textContent = "—";
+        return;
+      }
+
+      const valor = (parseInt(numeros) / 100).toFixed(2);
+
+      const formatado = "R$ " + valor
+        .replace(".", ",")
+        .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+      trocoInput.value = formatado;
+      document.getElementById("infoTroco").textContent = `Troco para ${formatado}`;
+    });
+
+    function pagamentoToggle() {
+      const tipo = document.querySelector('input[name="pagamento"]:checked').value;
+      const pixArea = document.getElementById("pixArea");
+
+      if (tipo === "pix") {
+        pixArea.classList.add("ativo");
+      } else {
+        pixArea.classList.remove("ativo");
+      }
+    }
+
+    pagamentoToggle();
+
+    const tel = document.getElementById("telefoneCliente");
+
+    if (tel) {
+      tel.addEventListener("input", () => {
+
+        let v = tel.value.replace(/\D/g, "");
+
+        if (v.length > 11) v = v.slice(0, 11);
+
+        if (v.length > 6) {
+          tel.value = `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`;
+        }
+        else if (v.length > 2) {
+          tel.value = `(${v.slice(0, 2)}) ${v.slice(2)}`;
+        }
+        else if (v.length > 0) {
+          tel.value = `(${v}`;
+        }
+        else {
+          tel.value = "";
+        }
+      });
+    }
+
+    ["nomeCliente", "telefoneCliente", "emailCliente"].forEach(id => {
+      const input = document.getElementById(id);
+
+      if (input) {
+        input.addEventListener("input", () => {
+          const cliente = {
+            nome: document.getElementById("nomeCliente").value,
+            telefone: document.getElementById("telefoneCliente").value,
+            email: document.getElementById("emailCliente").value
+          };
+
+          localStorage.setItem("cliente", JSON.stringify(cliente));
+        });
+      }
+    });
+
+    window.addEventListener("load", () => {
+      const cliente = JSON.parse(localStorage.getItem("cliente"));
+
+      if (cliente) {
+        document.getElementById("nomeCliente").value = cliente.nome || "";
+        document.getElementById("telefoneCliente").value = cliente.telefone || "";
+        document.getElementById("emailCliente").value = cliente.email || "";
+      }
+    });
+
+    ["nomeCliente", "telefoneCliente", "emailCliente"].forEach(id => {
+      const input = document.getElementById(id);
+
+      if (input) {
+        input.addEventListener("input", () => {
+          const cliente = {
+            nome: document.getElementById("nomeCliente").value,
+            telefone: document.getElementById("telefoneCliente").value,
+            email: document.getElementById("emailCliente").value
+          };
+
+          localStorage.setItem("cliente", JSON.stringify(cliente));
+        });
+      }
+    });
+
+  </script>
+
+  <!-- TRAVA DE HORÁRIO DO SITE -->
+  <script>
+    (function() {
+      async function verificarHorarioLoja() {
+        const agora = new Date();
+        const hora = agora.getHours();
+        const minutos = agora.getMinutes();
+        
+        // A loja abre das 12:50 as 13:00.
+        let isFechadaExpediente = (hora < 12 || (hora === 12 && minutos < 50) || hora >= 13);
+        
+        // Verificar status manual via Google Sheets
+        let forceStatus = null;
+        try {
+          const csvUrl = CONFIG.CSV_STATUS_LOJA_URL;
+          const response = await fetch(csvUrl + "&t=" + new Date().getTime()); // Evita cache
+          const text = await response.text();
+          const textoMin = text.toLowerCase();
+          
+          if (textoMin.includes("fechada") || textoMin.includes("fechado")) {
+            forceStatus = true;
+          } else if (textoMin.includes("aberta") || textoMin.includes("aberto")) {
+            forceStatus = false;
+          }
+        } catch (e) {
+          console.error("Erro ao ler status da loja", e);
+        }
+
+        const isFechada = forceStatus !== null ? forceStatus : isFechadaExpediente;
+        window.lojaFechada = isFechada;
+        
+        if (isFechada) {
+          if (!document.getElementById("store-closed-overlay") && !sessionStorage.getItem("lojaFechadaDismissed")) {
+            // Embaça o conteúdo ao fundo
+            Array.from(document.body.children).forEach(child => {
+              if (child.id !== "store-closed-overlay" && child.tagName !== "SCRIPT" && child.tagName !== "STYLE") {
+                child.style.transition = "filter 0.3s ease";
+                child.style.filter = "blur(6px)";
+                child.style.pointerEvents = "none";
+              }
+            });
+
+            // Cria o overlay com fundo escuro translúcido e backdrop-filter
+            const overlay = document.createElement("div");
+            overlay.id = "store-closed-overlay";
+            overlay.style.position = "fixed";
+            overlay.style.top = "0";
+            overlay.style.left = "0";
+            overlay.style.width = "100vw";
+            overlay.style.height = "100vh";
+            overlay.style.backgroundColor = "rgba(0, 0, 0, 0.65)";
+            overlay.style.backdropFilter = "blur(10px)";
+            overlay.style.WebkitBackdropFilter = "blur(10px)";
+            overlay.style.zIndex = "20000";
+            overlay.style.display = "flex";
+            overlay.style.alignItems = "center";
+            overlay.style.justifyContent = "center";
+            overlay.style.padding = "20px";
+            overlay.style.boxSizing = "border-box";
+            overlay.style.opacity = "0";
+            overlay.style.transition = "opacity 0.4s ease";
+
+            // Bloqueia a rolagem da página
+            document.body.style.overflow = "hidden";
+
+            // Cria o container do popup com design premium e animação
+            const popup = document.createElement("div");
+            popup.style.background = "#ffffff";
+            popup.style.borderRadius = "28px";
+            popup.style.padding = "35px 25px";
+            popup.style.width = "100%";
+            popup.style.maxWidth = "360px";
+            popup.style.textAlign = "center";
+            popup.style.boxShadow = "0 25px 50px rgba(0, 0, 0, 0.3)";
+            popup.style.transform = "scale(0.8)";
+            popup.style.transition = "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+            popup.style.boxSizing = "border-box";
+
+            // Ícone de trava/fechado com gradiente
+            const iconContainer = document.createElement("div");
+            iconContainer.style.width = "75px";
+            iconContainer.style.height = "75px";
+            iconContainer.style.borderRadius = "50%";
+            iconContainer.style.background = "linear-gradient(135deg, #ff416c, #ff4b2b)";
+            iconContainer.style.display = "flex";
+            iconContainer.style.alignItems = "center";
+            iconContainer.style.justifyContent = "center";
+            iconContainer.style.margin = "0 auto 20px auto";
+            iconContainer.style.boxShadow = "0 10px 20px rgba(255, 65, 108, 0.3)";
+            iconContainer.innerHTML = "<span style='font-size: 34px;'>🔒</span>";
+
+            // Título
+            const title = document.createElement("h2");
+            title.innerText = "Loja Fechada";
+            title.style.margin = "0 0 15px 0";
+            title.style.color = "#222222";
+            title.style.fontSize = "24px";
+            title.style.fontWeight = "700";
+            title.style.fontFamily = "'Poppins', sans-serif";
+
+            // Mensagem descritiva
+            const message = document.createElement("p");
+            message.innerHTML = "No momento nossa loja está fechada.<br><br>Nosso horário de funcionamento é das <strong>12:50 às 13:00</strong>.<br><br>Voltaremos a atender às <strong>12:50</strong>!";
+            message.style.margin = "0 0 25px 0";
+            message.style.color = "#555555";
+            message.style.fontSize = "14px";
+            message.style.lineHeight = "1.6";
+            message.style.fontFamily = "'Poppins', sans-serif";
+
+            // Badge / Alerta de horário
+            const badge = document.createElement("div");
+            badge.innerHTML = "⏰ <strong>Abre hoje às 12:50</strong>";
+            badge.style.background = "#fff5f5";
+            badge.style.color = "#d62828";
+            badge.style.padding = "10px 18px";
+            badge.style.borderRadius = "14px";
+            badge.style.fontSize = "13px";
+            badge.style.display = "inline-block";
+            badge.style.border = "1px solid #ffe3e3";
+            badge.style.fontFamily = "'Poppins', sans-serif";
+
+            // Botão Ver Cardápio
+            const btnVerCardapio = document.createElement("button");
+            btnVerCardapio.innerText = "Ver a Loja";
+            btnVerCardapio.style.marginTop = "20px";
+            btnVerCardapio.style.padding = "14px 24px";
+            btnVerCardapio.style.background = "#222";
+            btnVerCardapio.style.color = "#fff";
+            btnVerCardapio.style.border = "none";
+            btnVerCardapio.style.borderRadius = "12px";
+            btnVerCardapio.style.cursor = "pointer";
+            btnVerCardapio.style.fontWeight = "bold";
+            btnVerCardapio.style.fontFamily = "'Poppins', sans-serif";
+            btnVerCardapio.style.width = "100%";
+            
+            btnVerCardapio.onclick = () => {
+              sessionStorage.setItem("lojaFechadaDismissed", "true");
+              const overlayToRemove = document.getElementById("store-closed-overlay");
+              if (overlayToRemove) overlayToRemove.remove();
+              document.body.style.overflow = "";
+              Array.from(document.body.children).forEach(child => {
+                if (child.tagName !== "SCRIPT" && child.tagName !== "STYLE") {
+                  child.style.filter = "";
+                  child.style.pointerEvents = "";
+                }
+              });
+            };
+
+            popup.appendChild(iconContainer);
+            popup.appendChild(title);
+            popup.appendChild(message);
+            popup.appendChild(badge);
+            popup.appendChild(btnVerCardapio);
+            overlay.appendChild(popup);
+            document.body.appendChild(overlay);
+
+            // Trigger de animação (fade in + pop)
+            requestAnimationFrame(() => {
+              overlay.style.opacity = "1";
+              popup.style.transform = "scale(1)";
+            });
+          }
+        } else {
+          // Se estiver no horário de funcionamento (>= 18h), remove a trava caso exista
+          const overlay = document.getElementById("store-closed-overlay");
+          if (overlay) {
+            overlay.remove();
+            document.body.style.overflow = "";
+            Array.from(document.body.children).forEach(child => {
+              if (child.tagName !== "SCRIPT" && child.tagName !== "STYLE") {
+                child.style.filter = "";
+                child.style.pointerEvents = "";
+              }
+            });
+          }
+        }
+      }
+
+      // Executa ao carregar e monitora
+      window.addEventListener("DOMContentLoaded", verificarHorarioLoja);
+      if (document.readyState === "complete" || document.readyState === "interactive") {
+        verificarHorarioLoja();
+      }
+      
+      // Checa a cada minuto para destravar ou travar automaticamente
+      setInterval(verificarHorarioLoja, 60000);
+    })();
+  </script>
+
+</body>
+
+</html>

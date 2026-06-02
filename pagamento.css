@@ -1,0 +1,296 @@
+/* ===============================
+   RESET + BASE
+================================ */
+
+*{
+  box-sizing:border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body{
+  margin:0;
+  background:#f4f4f4;
+}
+
+/* ===============================
+   CONTAINER PRINCIPAL
+================================ */
+
+.container{
+  max-width:480px;
+  margin:0 auto;
+  padding:16px;
+}
+
+/* ===============================
+   HEADER
+================================ */
+
+.header{
+  background:#fff;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  border-radius:12px;
+  margin-bottom:16px;
+  box-shadow:0 4px 10px rgba(0,0,0,.06);
+}
+
+.header button{
+  border:none;
+  background:#ff0000;
+  color:#fff;
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  font-size:18px;
+}
+
+.header h2{
+  font-size:18px;
+  font-weight:600;
+  margin:0;
+}
+
+/* ===============================
+   CARDS
+================================ */
+
+.card{
+  background:#fff;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:16px;
+  box-shadow:0 6px 14px rgba(0,0,0,.06);
+}
+
+.card h3{
+  margin:0 0 12px;
+  font-size:16px;
+}
+
+/* ===============================
+   FORMULÁRIOS
+================================ */
+
+.card label{
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:6px;
+  display:block;
+}
+
+.card input,
+.card textarea{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  background:#f9fafb;
+  margin-bottom:12px;
+  font-size:14px;
+}
+
+.card textarea{
+  resize:none;
+  height:80px;
+}
+
+.card input:focus,
+.card textarea:focus{
+  outline:none;
+  border-color:#ff0000;
+  background:#fff;
+}
+
+/* ===============================
+   OPÇÕES DE PAGAMENTO
+================================ */
+
+.opcao{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:14px;
+  border:1px solid #ddd;
+  border-radius:12px;
+  margin-bottom:10px;
+  background:#fafafa;
+  cursor:pointer;
+}
+
+.opcao input{
+  margin:0;
+}
+
+/* ===============================
+   RESUMO
+================================ */
+
+.linha{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:8px;
+}
+
+.total{
+  border-top:1px solid #eee;
+  padding-top:10px;
+  font-size:18px;
+  font-weight:700;
+  color:#d32f2f;
+}
+
+/* ===============================
+   BOTÃO FINAL
+================================ */
+
+.btn-finalizar{
+  width:100%;
+  padding:18px;
+  background:#d32f2f;
+  color:#fff;
+  border:none;
+  border-radius:30px;
+  font-size:17px;
+  font-weight:600;
+  margin:10px 0 30px;
+  box-shadow:0 8px 20px rgba(0,0,0,.15);
+}
+
+.btn-finalizar:active{
+  transform:scale(.97);
+}
+
+/* ===============================
+   RESPONSIVO
+================================ */
+
+@media (min-width:900px){
+  .container{
+    max-width:720px;
+  }
+}
+
+.troco-box{
+  display:block;
+  margin:10px 0 14px;
+}
+
+.troco-box input{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  margin-bottom:8px;
+}
+
+.troco-box button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:#ff0000;
+  color:#fff;              /* 👈 texto branco */
+  font-weight:600;
+}
+
+
+.troco-box{
+  max-height:0;
+  overflow:hidden;
+  opacity:0;
+  transition:all .35s ease;
+}
+
+.troco-box.ativo{
+  max-height:160px;
+  opacity:1;
+}
+
+.pix-area{
+  max-height:0;
+  overflow:hidden;
+  opacity:0;
+  transform:translateY(-6px);
+  transition:all .35s ease;
+}
+
+.pix-area.ativo{
+  max-height:200px;
+  opacity:1;
+  transform:translateY(0);
+}
+
+.pix-box{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#f7f7f7;
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:6px;
+}
+
+.pix-box button{
+  background:#d32f2f;
+  color:#fff;
+  border:none;
+  padding:8px 14px;
+  border-radius:8px;
+  font-weight:600;
+}
+
+.pix-aviso{
+  font-size:12px;
+  color:#777;
+  margin:0;
+}
+
+.opcao input[type="radio"]{
+  display:none;
+}
+
+.opcao{
+  cursor:pointer;
+  transition:.2s ease;
+}
+
+.opcao:has(input:checked){
+  border:2px solid #ff0000;
+  background:#fff3ee;
+}
+input[type="radio"]{
+  display:none;
+}
+
+.pix-aviso{
+  font-size:12px;
+  color:#777;
+  margin-top:6px;
+  text-align:left;
+}
+
+#btnCopiarPix{
+  transition:.25s ease;
+}
+
+#btnCopiarPix.copiado{
+  background:#16a34a; /* verde */
+  transform:scale(1.05);
+}
+
+.entrega .opcao{
+  padding:14px;
+  border:2px solid #de6b49;
+  border-radius:12px;
+  background:#fff3ee;
+  font-weight:600;
+}
+
+.endereco-entrega{
+  margin-top:8px;
+  font-size:14px;
+  color:#555;
+}

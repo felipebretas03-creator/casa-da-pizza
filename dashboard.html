@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Financeiro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f4f7f6;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    .nav-bar {
+      max-width: 1000px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-voltar {
+      background: #333;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    .btn-voltar:hover {
+      background: #555;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .metric-card {
+      background: linear-gradient(135deg, #2c3e50, #34495e);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .metric-card.green {
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+    }
+
+    .metric-card.orange {
+      background: linear-gradient(135deg, #e67e22, #f39c12);
+    }
+
+    .metric-title {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.9;
+    }
+
+    .metric-value {
+      font-size: 36px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .filters {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    select {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+      width: 100%;
+      margin-top: 30px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px;
+      font-size: 18px;
+      color: #666;
+    }
+
+    /* Regras para Celular */
+    @media (max-width: 600px) {
+      .filters {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .filters strong {
+        margin-bottom: 10px;
+        text-align: left;
+      }
+      select {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      h1 {
+        font-size: 24px;
+        margin-top: 20px;
+      }
+      .nav-bar {
+        flex-direction: column;
+      }
+      .btn-voltar {
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+      }
+      .chart-container {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="nav-bar">
+    <a href="painel.html" class="btn-voltar">⬅ Voltar para Pedidos</a>
+  </div>
+
+  <h1>📊 Dashboard Financeiro</h1>
+
+  <div class="container">
+    
+    <div class="filters">
+      <strong>Filtrar por Mês:</strong>
+      <select id="mesFilter" onchange="aplicarFiltro()">
+        <option value="todos">Todos os Meses (Histórico Completo)</option>
+        <!-- Meses serão inseridos via JS -->
+      </select>
+    </div>
+
+    <div id="loading-msg" class="loading">Carregando dados financeiros... ⏳</div>
+
+    <div id="dashboard-content" style="display: none;">
+      <div class="metrics-grid">
+        <div class="metric-card green">
+          <div class="metric-title">Faturamento Total</div>
+          <div class="metric-value" id="card-faturamento">R$ 0,00</div>
+        </div>
+        <div class="metric-card orange">
+          <div class="metric-title">Total de Entregas</div>
+          <div class="metric-value" id="card-entregas">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Média por Fechamento</div>
+          <div class="metric-value" id="card-media">R$ 0,00</div>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="faturamentoChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="config.js?v=2"></script>
+  <script>
+    const DEFAULT_URL = CONFIG.GOOGLE_SCRIPT_URL;
+    let GOOGLE_SCRIPT_URL = localStorage.getItem("googleAppUrl") || DEFAULT_URL;
+    let dadosGlobais = [];
+    let chartInstance = null;
+
+    // Inicializa
+    carregarDados();
+
+    function carregarDados() {
+      fetch(GOOGLE_SCRIPT_URL + "?action=listar_caixa_mes")
+        .then(res => res.json())
+        .then(data => {
+          dadosGlobais = data;
+          document.getElementById("loading-msg").style.display = "none";
+          document.getElementById("dashboard-content").style.display = "block";
+          
+          popularFiltroMeses(data);
+          aplicarFiltro(); // Aplica filtro padrão (Todos)
+        })
+        .catch(err => {
+          document.getElementById("loading-msg").innerHTML = `<span style="color:red">Erro ao carregar os dados. Verifique o Google Script.</span>`;
+          console.error(err);
+        });
+    }
+
+    function popularFiltroMeses(dados) {
+      const select = document.getElementById("mesFilter");
+      const mesesSet = new Set();
+
+      dados.forEach(row => {
+        let dataStr = row["Data de Fechamento"] || row["Data / Hora"] || row["Data"];
+        if (dataStr) {
+          // Extrai MM/YYYY de uma data no formato "DD/MM/YYYY hh:mm:ss" ou similar
+          let partes = dataStr.split(' ')[0].split('/'); 
+          if (partes.length >= 3) {
+            let mesAno = partes[1] + '/' + partes[2];
+            mesesSet.add(mesAno);
+          }
+        }
+      });
+
+      // Transforma Set em array e ordena do mais recente pro mais antigo
+      let mesesArr = Array.from(mesesSet).sort((a, b) => {
+        let [ma, ya] = a.split('/');
+        let [mb, yb] = b.split('/');
+        return new Date(yb, mb - 1) < new Date(ya, ma - 1) ? -1 : 1;
+      });
+
+      mesesArr.forEach(mesAno => {
+        let opt = document.createElement("option");
+        opt.value = mesAno;
+        opt.text = getNomeMes(mesAno.split('/')[0]) + " de " + mesAno.split('/')[1];
+        select.appendChild(opt);
+      });
+      
+      // Seleciona o mês atual se existir, senão "todos"
+      let hj = new Date();
+      let mesHj = String(hj.getMonth() + 1).padStart(2, '0') + '/' + hj.getFullYear();
+      if(mesesSet.has(mesHj)) {
+        select.value = mesHj;
+      }
+    }
+
+    function getNomeMes(numStr) {
+      const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+      return meses[parseInt(numStr, 10) - 1] || numStr;
+    }
+
+    function aplicarFiltro() {
+      const filtro = document.getElementById("mesFilter").value;
+      
+      let dadosFiltrados = dadosGlobais;
+
+      if (filtro !== "todos") {
+        dadosFiltrados = dadosGlobais.filter(row => {
+          let dataStr = row["Data de Fechamento"] || row["Data / Hora"] || row["Data"] || "";
+          return dataStr.includes("/" + filtro); // Filtra "DD/MM/YYYY" para ter "/MM/YYYY"
+        });
+      }
+
+      atualizarCards(dadosFiltrados);
+      atualizarGrafico(dadosFiltrados);
+    }
+
+    function parseMoney(val) {
+      if (!val) return 0;
+      return parseFloat(val.toString().replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+    }
+
+    function atualizarCards(dados) {
+      let faturamento = 0;
+      let entregas = 0;
+
+      dados.forEach(row => {
+        let totalStr = row["Total Arrecadado"] || row["Valor Total do dia"] || row["Valor Total"];
+        let qtdStr = row["Quantidade Entregues"] || row["Nº de Pedidos"] || row["Quantidade"];
+        
+        faturamento += parseMoney(totalStr);
+        entregas += parseInt(qtdStr || 0, 10);
+      });
+
+      let media = dados.length > 0 ? (faturamento / dados.length) : 0;
+
+      document.getElementById("card-faturamento").innerText = "R$ " + faturamento.toFixed(2).replace('.', ',');
+      document.getElementById("card-entregas").innerText = entregas;
+      document.getElementById("card-media").innerText = "R$ " + media.toFixed(2).replace('.', ',');
+    }
+
+    function atualizarGrafico(dados) {
+      const labels = [];
+      const faturamentos = [];
+      const filtro = document.getElementById("mesFilter").value;
+
+      const agrupado = {};
+
+      dados.forEach(row => {
+        let dataFull = row["Data de Fechamento"] || row["Data / Hora"] || row["Data"] || "";
+        let dataParte = dataFull.split(' ')[0]; // Pega só o DD/MM/YYYY
+        if (!dataParte) return;
+
+        let totalStr = row["Total Arrecadado"] || row["Valor Total do dia"] || row["Valor Total"];
+        let val = parseMoney(totalStr);
+
+        if (filtro === "todos") {
+          // Agrupar por MÊS (MM/YYYY)
+          let partes = dataParte.split('/');
+          if (partes.length >= 3) {
+            let mesAno = partes[1] + '/' + partes[2];
+            if (!agrupado[mesAno]) agrupado[mesAno] = 0;
+            agrupado[mesAno] += val;
+          }
+        } else {
+          // Agrupar por DIA (DD/MM)
+          let diaCurto = dataParte.split('/').slice(0,2).join('/');
+          if (!agrupado[diaCurto]) agrupado[diaCurto] = 0;
+          agrupado[diaCurto] += val;
+        }
+      });
+
+      for (let chave in agrupado) {
+        if (filtro === "todos") {
+          // Formatar para exibição: "06/2026" -> "Jun/2026"
+          let partes = chave.split('/');
+          labels.push(getNomeMes(partes[0]) + '/' + partes[1].slice(-2)); // Ex: Jun/26
+        } else {
+          labels.push(chave);
+        }
+        faturamentos.push(agrupado[chave]);
+      }
+
+      const ctx = document.getElementById('faturamentoChart').getContext('2d');
+      
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Faturamento (R$)',
+            data: faturamentos,
+            backgroundColor: 'rgba(39, 174, 96, 0.2)',
+            borderColor: '#27ae60',
+            borderWidth: 3,
+            pointBackgroundColor: '#2ecc71',
+            pointRadius: 5,
+            fill: true,
+            tension: 0.3 // curva suave
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ' R$ ' + context.parsed.y.toFixed(2).replace('.', ',');
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) { return 'R$ ' + value; }
+              }
+            }
+          }
+        }
+      });
+    }
+
+  </script>
+</body>
+</html>

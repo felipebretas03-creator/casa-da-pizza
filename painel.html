@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel da Pizzaria</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.png" type="image/png">
+  
+  <!-- Configurações PWA (Aplicativo) -->
+  <link rel="manifest" href="manifest_painel.json">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Painel">
+  
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #d62828;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f9f9f9;
+    }
+
+    .btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: bold;
+      margin-right: 5px;
+      color: white;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      opacity: 0.8;
+      transform: scale(0.95);
+    }
+
+    .btn-preparando {
+      background: #3498db;
+    }
+
+    .btn-saiu {
+      background: #e67e22;
+    }
+
+    .btn-entregue {
+      background: #2ecc71;
+    }
+
+    .btn-atualizar {
+      background: linear-gradient(135deg, #1e90ff, #005cbf);
+      padding: 10px 20px;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 6px rgba(0, 92, 191, 0.2);
+      border: none;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    .btn-atualizar:hover {
+      background: linear-gradient(135deg, #005cbf, #004085);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 92, 191, 0.3);
+    }
+
+    .btn-controle {
+      border: none;
+      padding: 12px 25px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      color: white;
+      transition: 0.2s;
+    }
+
+    .btn-controle:hover {
+      opacity: 0.8;
+      transform: scale(0.95);
+    }
+
+    .btn-aberto {
+      background: #2ecc71;
+    }
+
+    .btn-fechado {
+      background: #e74c3c;
+    }
+
+    .btn-automatico {
+      background: #95a5a6;
+    }
+
+    .controle-header {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .lista-header {
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-top: 10px;
+    }
+
+    /* Modal Customizado */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .modal-text {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    .btn-modal-cancel {
+      background: #eee;
+      color: #555;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      flex: 1;
+      transition: 0.2s;
+    }
+    .btn-modal-cancel:hover { background: #ddd; }
+    
+    .btn-modal-confirm {
+      background: #27ae60;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      flex: 1;
+      transition: 0.2s;
+    }
+    .btn-modal-confirm:hover { background: #219653; transform: scale(1.02); }
+
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      color: white;
+      display: inline-block;
+    }
+
+    .status-Recebido {
+      background: #f1c40f;
+      color: #333;
+    }
+
+    .status-Preparando {
+      background: #3498db;
+    }
+
+    .status-Saiu {
+      background: #e67e22;
+    }
+
+    .status-Entregue {
+      background: #2ecc71;
+    }
+
+    #url-config {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      background: #fff3ee;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #ffcccb;
+    }
+
+    #url-config input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    #url-config button {
+      padding: 10px 20px;
+      background: #d62828;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px;
+      font-style: italic;
+      color: #777;
+    }
+
+    /* Responsivo básico */
+    @media (max-width: 768px) {
+
+      table,
+      thead,
+      tbody,
+      th,
+      td,
+      tr {
+        display: block;
+      }
+
+      thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+
+      tr {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      td {
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 40%;
+      }
+
+      td:before {
+        position: absolute;
+        left: 10px;
+        width: 35%;
+        padding-right: 10px;
+        font-weight: bold;
+      }
+
+      td:nth-of-type(1):before {
+        content: "ID";
+      }
+
+      td:nth-of-type(2):before {
+        content: "Data";
+      }
+
+      td:nth-of-type(3):before {
+        content: "Cliente";
+      }
+
+      td:nth-of-type(4):before {
+        content: "Status";
+      }
+
+      td:nth-of-type(5):before {
+        content: "Ações";
+      }
+
+      .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 5px;
+      }
+
+      .btn-atualizar {
+        width: 100%;
+      }
+
+      .btn-controle {
+        width: 100%;
+        margin-bottom: 8px;
+      }
+
+      .controle-header {
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .lista-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1000px; margin: 0 auto; padding: 0 20px;">
+    <h1>🍕 Painel de Controle</h1>
+    <a href="dashboard.html" style="background: #34495e; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;">📊 Ver Dashboard</a>
+  </div>
+
+  <div class="container">
+
+    <div id="url-config" style="display: none;">
+      <input type="text" id="scriptUrl" placeholder="Cole aqui a URL do seu Google Apps Script (Web App)...">
+      <button onclick="salvarUrl()">Salvar e Conectar</button>
+    </div>
+
+    <!-- Caixa do Dia -->
+    <div style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; text-align: center; box-shadow: 0 6px 15px rgba(39, 174, 96, 0.3);">
+      <h3 style="margin: 0; font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">💰 Caixa do Dia</h3>
+      <div style="font-size: 42px; font-weight: bold; margin: 10px 0;" id="caixa-valor">R$ 0,00</div>
+      <div style="font-size: 15px; opacity: 0.9; margin-bottom: 15px;" id="caixa-qtd">0 pedidos entregues hoje</div>
+      <button id="btn-fechar-caixa" onclick="fecharCaixa()" style="background: white; color: #27ae60; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        🔒 Fechar Caixa do Dia
+      </button>
+    </div>
+
+    <!-- Controle da Loja -->
+    <div
+      style="background: #fff3ee; padding: 20px; border-radius: 10px; border: 1px solid #ffcccb; margin-bottom: 20px; text-align: center;">
+      <h3 style="margin-top: 0; color: #333;">Controle da Loja</h3>
+      <div class="controle-header">
+        <button class="btn-controle btn-aberto" onclick="alterarStatusLoja('ABERTO')">🟢 ABERTO</button>
+        <button class="btn-controle btn-fechado" onclick="alterarStatusLoja('FECHADO')">🔴 FECHADO</button>
+        <button class="btn-controle btn-automatico" onclick="alterarStatusLoja('AUTOMÁTICO')">⚪ AUTOMÁTICO</button>
+      </div>
+      <div id="status-loja-feedback" style="margin-top: 15px; font-weight: bold; font-size: 14px;"></div>
+    </div>
+
+    <div class="lista-header">
+      <h3 style="margin: 0;">Lista de Pedidos</h3>
+      <button class="btn btn-atualizar" onclick="carregarPedidos()">
+        <svg style="width:16px; height:16px; margin-right:6px; vertical-align:-3px;" fill="none" stroke="currentColor"
+          viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+          </path>
+        </svg>
+        Atualizar Pedidos
+      </button>
+    </div>
+
+    <div id="pedidos-container">
+      <!-- Tabela injetada via JavaScript -->
+    </div>
+
+    <!-- Seção de Arquivados -->
+    <div style="margin-top: 40px;">
+      <button onclick="toggleArquivados()" style="width: 100%; padding: 15px; background: #e0e0e0; border: 1px solid #ccc; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; color: #555; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.2s;">
+        <svg style="width:20px; height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+        Ver Pedidos Arquivados (Entregues)
+      </button>
+      <div id="arquivados-container" style="display: none; margin-top: 15px; opacity: 0.7;">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal de Confirmação do Caixa -->
+  <div id="modal-fechar-caixa" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-title">💰 Fechar o Caixa?</div>
+      <div class="modal-text">
+        Tem certeza que deseja fechar o caixa de hoje?<br><br>
+        Todos os pedidos atuais serão movidos para o <b>Histórico de Pedidos</b> e o valor total arrecadado no dia será salvo na sua aba <b>Caixa do Mês</b>.
+      </div>
+      <div class="modal-buttons">
+        <button class="btn-modal-cancel" onclick="fecharModalCaixa()">Cancelar</button>
+        <button class="btn-modal-confirm" onclick="confirmarFecharCaixa()">Sim, Fechar Caixa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Sucesso do Caixa -->
+  <div id="modal-sucesso-caixa" class="modal-overlay">
+    <div class="modal-content" style="max-width: 350px;">
+      <div style="font-size: 40px; margin-bottom: 10px;">✅</div>
+      <div class="modal-title">Caixa Fechado!</div>
+      <div class="modal-text">
+        O caixa foi fechado com sucesso e os dados foram salvos na planilha.
+      </div>
+      <button class="btn-modal-confirm" style="width: 100%;" onclick="fecharModalSucesso()">Maravilha</button>
+    </div>
+  </div>
+
+  <script src="config.js?v=2"></script>
+  <script>
+    const DEFAULT_URL = CONFIG.GOOGLE_SCRIPT_URL;
+    let GOOGLE_SCRIPT_URL = localStorage.getItem("googleAppUrl") || DEFAULT_URL;
+
+    if (GOOGLE_SCRIPT_URL) {
+      document.getElementById("scriptUrl").value = GOOGLE_SCRIPT_URL;
+      carregarPedidos();
+    }
+
+    function salvarUrl() {
+      const url = document.getElementById("scriptUrl").value.trim();
+      if (url) {
+        localStorage.setItem("googleAppUrl", url);
+        GOOGLE_SCRIPT_URL = url;
+        carregarPedidos();
+      }
+    }
+
+    function alterarStatusLoja(status) {
+      if (!GOOGLE_SCRIPT_URL) {
+        alert("Por favor, configure a URL do Google Script primeiro!");
+        return;
+      }
+
+      const feedback = document.getElementById("status-loja-feedback");
+      feedback.innerText = "Atualizando...";
+      feedback.style.color = "#666";
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({
+          action: "alterar_status_loja",
+          status: status
+        })
+      })
+      .then(() => {
+        feedback.innerText = "Status da loja alterado para: " + status;
+        feedback.style.color = status === "ABERTO" ? "#2ecc71" : (status === "FECHADO" ? "#e74c3c" : "#95a5a6");
+      })
+      .catch(err => {
+        feedback.innerText = "Erro ao se comunicar com o sistema!";
+        feedback.style.color = "red";
+        console.error("Erro status loja:", err);
+      });
+    }
+
+    function carregarPedidos() {
+      if (!GOOGLE_SCRIPT_URL) return;
+
+      const container = document.getElementById("pedidos-container");
+      container.innerHTML = '<div class="loading">Carregando pedidos da planilha... ⏳</div>';
+
+      fetch(GOOGLE_SCRIPT_URL + "?action=listar_pedidos")
+        .then(res => res.json())
+        .then(data => {
+          renderizarTabela(data);
+        })
+        .catch(err => {
+          container.innerHTML = `<div class="loading" style="color: red;">Erro ao carregar os pedidos.<br><small>Verifique se a URL está correta e se o Web App foi publicado como "Qualquer pessoa".</small></div>`;
+        });
+    }
+
+    function toggleArquivados() {
+      const container = document.getElementById("arquivados-container");
+      if (container.style.display === "none") {
+        container.style.display = "block";
+      } else {
+        container.style.display = "none";
+      }
+    }
+
+    function gerarHtmlTabela(listaPedidos) {
+      if (!listaPedidos || listaPedidos.length === 0) {
+        return '<div class="loading">Nenhum pedido nesta lista.</div>';
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Data</th>
+              <th>Cliente</th>
+              <th>Status</th>
+              <th>Ações de Status (Abre o WhatsApp)</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      listaPedidos.forEach(p => {
+        let idStr = p.ID || p["ID do Pedido"] || p["Id"] || p["id"] || "";
+        let dataStr = p.Data || p["Data e Hora"] || "";
+        let clienteStr = p.Cliente || p["Nome do Cliente"] || p["Nome"] || "";
+        let telefoneStr = p.Telefone || p["WhatsApp"] || p["Contato"] || "";
+        let totalStr = p.Total || p["Total (R$)"] || "";
+        let statusStr = p.Status || "Recebido";
+
+        let statusClass = "status-" + statusStr.split(' ')[0];
+
+        html += `
+          <tr>
+            <td><strong>#${idStr}</strong></td>
+            <td style="color: #666; font-size: 12px;">${dataStr}</td>
+            <td>
+              <strong>${clienteStr}</strong><br>
+              <small>${telefoneStr}</small><br>
+              <small style="color: #d62828; font-weight: bold;">R$ ${totalStr}</small>
+            </td>
+            <td><span class="status-badge ${statusClass}">${statusStr}</span></td>
+            <td>
+              <button class="btn btn-preparando" onclick="atualizarStatus('${idStr}', 'Preparando', '${clienteStr}', '${telefoneStr}')">🔵 Preparando</button>
+              <button class="btn btn-saiu" onclick="atualizarStatus('${idStr}', 'Saiu para Entrega', '${clienteStr}', '${telefoneStr}')">🟠 Saiu p/ Entrega</button>
+              <button class="btn btn-entregue" onclick="atualizarStatus('${idStr}', 'Entregue', '${clienteStr}', '${telefoneStr}')">🟢 Entregue</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table>`;
+      return html;
+    }
+
+    function renderizarTabela(pedidos) {
+      const containerAtivos = document.getElementById("pedidos-container");
+      const containerArquivados = document.getElementById("arquivados-container");
+
+      if (!pedidos || pedidos.length === 0) {
+        containerAtivos.innerHTML = '<div class="loading">Nenhum pedido encontrado na planilha.</div>';
+        containerArquivados.innerHTML = '';
+        document.getElementById("caixa-valor").innerText = "R$ 0,00";
+        document.getElementById("caixa-qtd").innerText = "0 pedidos entregues hoje";
+        return;
+      }
+
+      let ativos = pedidos.filter(p => p.Status !== "Entregue");
+      let arquivados = pedidos.filter(p => p.Status === "Entregue");
+
+      // Calcular Caixa do Dia
+      let totalCaixa = 0;
+      arquivados.forEach(p => {
+        let valorStr = (p.Total || p["Total (R$)"] || "0").toString().replace(/[^\d,.-]/g, '').replace(',', '.');
+        let valor = parseFloat(valorStr);
+        if (!isNaN(valor)) {
+          totalCaixa += valor;
+        }
+      });
+
+      document.getElementById("caixa-valor").innerText = "R$ " + totalCaixa.toFixed(2).replace('.', ',');
+      document.getElementById("caixa-qtd").innerText = arquivados.length + " pedidos entregues hoje";
+
+      containerAtivos.innerHTML = gerarHtmlTabela(ativos);
+      containerArquivados.innerHTML = gerarHtmlTabela(arquivados);
+    }
+
+    function fecharCaixa() {
+      if (!GOOGLE_SCRIPT_URL) {
+        alert("Configure a URL do Web App primeiro!");
+        return;
+      }
+      
+      // Abre o modal bonito ao invés do confirm padrão
+      document.getElementById("modal-fechar-caixa").style.display = "flex";
+    }
+
+    function fecharModalCaixa() {
+      document.getElementById("modal-fechar-caixa").style.display = "none";
+    }
+
+    function fecharModalSucesso() {
+      document.getElementById("modal-sucesso-caixa").style.display = "none";
+    }
+
+    function confirmarFecharCaixa() {
+      // Fecha o modal de confirmação
+      fecharModalCaixa();
+
+      const btn = document.getElementById("btn-fechar-caixa");
+      btn.innerText = "⏳ Fechando...";
+      btn.disabled = true;
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({ action: "fechar_caixa" })
+      })
+      .then(() => {
+        // Mostra o modal de sucesso
+        document.getElementById("modal-sucesso-caixa").style.display = "flex";
+        carregarPedidos();
+      })
+      .catch(err => {
+        alert("Ocorreu um erro ao tentar fechar o caixa.");
+        console.error("Erro fechar caixa:", err);
+      })
+      .finally(() => {
+        btn.innerText = "🔒 Fechar Caixa do Dia";
+        btn.disabled = false;
+      });
+    }
+
+    function atualizarStatus(id, novoStatus, clienteNome, telefone) {
+      if (!GOOGLE_SCRIPT_URL) {
+        alert("Por favor, configure a URL do Google Script primeiro!");
+        return;
+      }
+
+      // 1. Atualiza na planilha (Assíncrono em background)
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "atualizar_status",
+          id: id,
+          status: novoStatus
+        })
+      }).catch(err => console.log("Erro ao atualizar planilha", err));
+
+      // 2. Monta a mensagem do WhatsApp para o cliente
+      let primeiroNome = clienteNome.split(' ')[0]; // Pega só o primeiro nome para ser mais íntimo
+      let msg = "";
+
+      if (novoStatus === "Preparando") {
+        msg = `Eba, ${primeiroNome}! 🎉\n\nSeu pedido acabou de entrar no nosso preparo e está sendo feito com muito carinho 🍕.\n\nAssim que sair para entrega, eu te dou um toque por aqui, tá bom? 😊`;
+      } else if (novoStatus === "Saiu para Entrega") {
+        msg = `Boas notícias, ${primeiroNome}! 🛵\n\nO seu pedido acabou de sair para entrega e logo logo vai estar batendo na sua porta!\n\nJá vai arrumando a mesa aí! 🍕✨`;
+      } else if (novoStatus === "Entregue") {
+        msg = `Pedido entregue, ${primeiroNome}! ✅\n\nEsperamos que a sua experiência com o nosso serviço seja maravilhoso.\n\nMuito obrigado por escolher a nossa casa! Bom apetite e até a próxima! 🙏🤍`;
+      }
+
+      // 3. Formata telefone e abre o WhatsApp
+      let telefoneFormatado = telefone.replace(/\D/g, "");
+      if (telefoneFormatado.length <= 11 && telefoneFormatado.length > 0) {
+        telefoneFormatado = "55" + telefoneFormatado; // Adiciona DDI do Brasil se não tiver
+      }
+
+      if (telefoneFormatado) {
+        const urlWhats = `https://wa.me/${telefoneFormatado}?text=${encodeURIComponent(msg)}`;
+        window.open(urlWhats, '_blank'); // Abre em nova aba
+      } else {
+        alert("O telefone desse cliente não parece ser válido para WhatsApp.");
+      }
+
+      // 4. Atualiza a tela após 1 segundo para mostrar o novo status
+      setTimeout(carregarPedidos, 1000);
+    }
+
+    // Registrar o Service Worker para PWA (Android Install)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw_painel.js').catch(err => {
+          console.log('SW registration failed: ', err);
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>
