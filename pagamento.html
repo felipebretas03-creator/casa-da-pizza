@@ -125,7 +125,7 @@
     const carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
     const endereco = localStorage.getItem("enderecoUsuario");
 
-    let subtotal = carrinho.reduce((s, i) => s + parseFloat(i.preco), 0);
+    let subtotal = carrinho.reduce((s, i) => s + (parseFloat(i.preco) * (i.qtd || 1)), 0);
     const tipoEntrega = localStorage.getItem("tipoEntrega") || "delivery";
     const frete = tipoEntrega === "retirada" ? 0 : (parseFloat(localStorage.getItem("freteUsuario")) || 10);
 
@@ -179,9 +179,12 @@
       let textoItens = "";
 
       carrinho.forEach(item => {
+        const qtd = item.qtd || 1;
+        const precoTotalItem = (parseFloat(item.preco) * qtd).toFixed(2).replace('.', ',');
         let detalhesItem = item.sabor || "";
         if (item.preparo) detalhesItem += " • " + item.preparo;
-        textoItens += `• ${item.nome} (${detalhesItem}) - R$ ${item.preco}\n`;
+        const detalhesTexto = detalhesItem ? ` (${detalhesItem})` : "";
+        textoItens += `• ${qtd}x ${item.nome}${detalhesTexto} - R$ ${precoTotalItem}\n`;
 
         if (item.observacao) {
           textoItens += `   📝 Obs: ${item.observacao}\n`;
@@ -265,13 +268,13 @@
       // Esvazia carrinho
       localStorage.removeItem("carrinho");
 
-      // Redireciona a janela atual primeiro e, no cenário ideal, o WhatsApp é aberto em seguida.
+      // Redireciona a janela atual para o WhatsApp
       window.location.href = urlWhats;
 
-      // Opcional: Volta para o index após um tempo para limpar a tela de pagamento
+      // Opcional: Volta para o index após um tempo maior para limpar a tela de pagamento
       setTimeout(() => {
         window.location.replace("index.html");
-      }, 3000);
+      }, 15000);
     }
 
     function trocoToggle() {
