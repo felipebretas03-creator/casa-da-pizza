@@ -254,12 +254,13 @@
       };
 
       if (GOOGLE_SCRIPT_URL !== "COLE_AQUI_A_URL_DO_SEU_WEB_APP") {
-        // Envia para o Google Sheets em segundo plano e aguarda
+        // Envia para o Google Sheets em segundo plano sem aguardar (para não atrasar o WhatsApp)
         try {
-          await fetch(GOOGLE_SCRIPT_URL, {
+          fetch(GOOGLE_SCRIPT_URL, {
             method: "POST",
-            body: JSON.stringify(payloadPlanilha)
-          });
+            body: JSON.stringify(payloadPlanilha),
+            keepalive: true
+          }).catch(err => console.log("Erro Google Sheets", err));
         } catch (err) {
           console.log("Erro Google Sheets", err);
         }
